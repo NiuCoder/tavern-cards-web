@@ -3401,4 +3401,5 @@
       populateCodexModal();
       bindEvents();
       initNewMatch();
+      if (window.TutorialGuide) TutorialGuide.init({ skipFocus: true });
     };

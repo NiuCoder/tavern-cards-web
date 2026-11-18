@@ -25,6 +25,9 @@
     </div>
 
     <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+      <button id="btn-tutorial" type="button" class="px-2 sm:px-2.5 py-1 min-h-9 rounded-md bg-stone-800 hover:bg-stone-700 active:scale-95 text-amber-200 text-xs font-semibold border border-amber-700/40 transition flex items-center gap-1" aria-haspopup="dialog" aria-controls="tutorial-panel" aria-label="新手引导" title="新手引导">
+        <span aria-hidden="true">📘</span><span>引导</span>
+      </button>
       <button id="btn-new-game" type="button" class="px-2 sm:px-2.5 py-1 rounded-md bg-gradient-to-b from-amber-600 to-amber-800 hover:brightness-110 active:scale-95 text-amber-50 text-xs font-bold border border-amber-300/60 shadow transition flex items-center gap-1">
         <span>⚔️</span><span>换职/新局</span>
       </button>
@@ -411,6 +414,26 @@
     </div>
   </div>
 
+
+  <!-- 新手引导：无全屏遮罩，不阻断换牌或职业选择 -->
+  <div id="tutorial-panel" class="tutorial-panel hidden" hidden role="dialog" aria-modal="false" aria-labelledby="tutorial-title" aria-describedby="tutorial-body" aria-hidden="true">
+    <div class="tutorial-panel-card">
+      <div class="tutorial-toolbar" style="justify-content: space-between; margin-bottom: 0.35rem;">
+        <div>
+          <p id="tutorial-step-indicator" class="text-[11px] font-semibold text-amber-200/80 m-0">第 1 / 7 步</p>
+          <h2 id="tutorial-title" class="font-fantasy">胜利目标</h2>
+        </div>
+        <button type="button" id="btn-tutorial-skip" class="tutorial-btn-skip">跳过</button>
+      </div>
+      <div id="tutorial-body" class="text-xs sm:text-sm text-stone-200 leading-relaxed" style="margin-bottom: 0.7rem;"></div>
+      <div class="tutorial-actions">
+        <button type="button" id="btn-tutorial-prev" class="tutorial-btn-prev">上一步</button>
+        <button type="button" id="btn-tutorial-next" class="tutorial-btn-next">下一步</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/tutorial.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

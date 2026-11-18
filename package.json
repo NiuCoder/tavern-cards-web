@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "deploy:dry-run": "wrangler deploy --dry-run"
+    "deploy:dry-run": "wrangler deploy --dry-run",
+    "test": "node --test tests/tutorial.test.mjs",
+    "build:standalone": "node scripts/build-standalone.mjs",
+    "syntax": "node --check public/js/tutorial.js && node --check public/js/game.js && node --check scripts/build-standalone.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.50.0"
