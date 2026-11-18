@@ -1,0 +1,193 @@
+:root {
+      --wood-deep: #140b05;
+      --wood-mid: #2b180c;
+      --gold-trim: #d4af37;
+      --parchment: #f3e5c8;
+      --parchment-dark: #dcc394;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(245, 158, 11, 0.14) 0%, transparent 42%),
+        radial-gradient(circle at 82% 82%, rgba(56, 189, 248, 0.12) 0%, transparent 42%),
+        repeating-linear-gradient(90deg, #211208 0px, #211208 28px, #1a0e06 28px, #1a0e06 56px);
+      color: #f8fafc;
+      overflow: hidden;
+      user-select: none;
+    }
+    .font-fantasy {
+      font-family: 'Noto Serif SC', Georgia, serif;
+    }
+    /* 豪华炉石沙盘棋盘 */
+    .tavern-board {
+      background:
+        radial-gradient(circle at 50% 50%, rgba(235, 206, 158, 0.97) 0%, rgba(203, 166, 110, 0.97) 58%, rgba(145, 105, 58, 0.98) 88%, #472b16 100%);
+      box-shadow:
+        inset 0 0 65px rgba(38, 20, 7, 0.88),
+        inset 0 2px 4px rgba(255, 237, 196, 0.35),
+        0 12px 36px rgba(0, 0, 0, 0.85),
+        0 0 0 3px #855831,
+        0 0 0 7px #2d1a0c;
+      border: 4px solid #b78846;
+    }
+    /* 炉石羊皮纸卡面 */
+    .hs-card-frame {
+      background: linear-gradient(165deg, #4b382a 0%, #291d15 55%, #1c140e 100%);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.72), inset 0 1px 1px rgba(255, 255, 255, 0.22);
+    }
+    .hs-parchment {
+      background: linear-gradient(180deg, #f6ead3 0%, #e4cfa3 100%);
+      color: #291809;
+      box-shadow: inset 0 1px 4px rgba(66, 38, 12, 0.45);
+    }
+    .hs-ribbon {
+      background: linear-gradient(90deg, #573b22 0%, #855b32 50%, #573b22 100%);
+      border-top: 1px solid #eab308;
+      border-bottom: 1px solid #a16207;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.95);
+    }
+    /* 六边形法力水晶角标 */
+    .mana-crystal-orb {
+      background: radial-gradient(circle at 32% 28%, #93c5fd 0%, #2563eb 52%, #1e3a8a 100%);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.8), inset 0 1px 2px rgba(255,255,255,0.75);
+      text-shadow: 0 1px 3px #000, 0 0 4px #000;
+    }
+    .atk-sword-orb {
+      background: radial-gradient(circle at 32% 28%, #fef08a 0%, #eab308 55%, #854d0e 100%);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.85), inset 0 1px 2px rgba(255,255,255,0.8);
+      text-shadow: 0 1px 2px rgba(255,255,255,0.4);
+    }
+    .hp-blood-orb {
+      background: radial-gradient(circle at 32% 28%, #fca5a5 0%, #dc2626 55%, #7f1d1d 100%);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.85), inset 0 1px 2px rgba(255,255,255,0.65);
+      text-shadow: 0 1px 3px #000;
+    }
+    /* 状态高亮光晕 */
+    .ready-glow {
+      box-shadow: 0 0 0 2.5px #22c55e, 0 0 18px 4px rgba(34, 197, 94, 0.82) !important;
+    }
+    .rush-glow {
+      box-shadow: 0 0 0 2.5px #10b981, 0 0 16px 4px rgba(16, 185, 129, 0.78) !important;
+    }
+    .selected-glow {
+      box-shadow: 0 0 0 3px #facc15, 0 0 24px 6px rgba(250, 204, 21, 0.92) !important;
+      transform: translateY(-6px) scale(1.06);
+    }
+    .valid-target-glow {
+      box-shadow: 0 0 0 3px #ef4444, 0 0 22px 6px rgba(239, 68, 68, 0.9) !important;
+      animation: targetPulse 1.05s infinite ease-in-out;
+      cursor: crosshair !important;
+    }
+    @keyframes targetPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    /* 嘲讽厚盾雕塑框 */
+    .taunt-shield {
+      border-radius: 40% 40% 48% 48% / 26% 26% 66% 66% !important;
+      border: 4.5px solid #cbd5e1 !important;
+      outline: 3px solid #334155;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.78), inset 0 0 12px rgba(255,255,255,0.4);
+    }
+    /* 圣盾金色能量罩 */
+    .divine-shield-overlay {
+      background: radial-gradient(ellipse at 35% 28%, rgba(255, 253, 240, 0.58) 0%, rgba(250, 204, 21, 0.34) 55%, rgba(234, 179, 8, 0.68) 100%);
+      border: 2.5px solid rgba(254, 240, 138, 0.96);
+      box-shadow: 0 0 18px rgba(250, 204, 21, 0.88), inset 0 0 12px rgba(254, 240, 138, 0.8);
+    }
+    /* 冰晶冻结层 */
+    .frozen-overlay {
+      background: linear-gradient(135deg, rgba(186, 230, 253, 0.68) 0%, rgba(56, 189, 248, 0.42) 50%, rgba(14, 165, 233, 0.68) 100%);
+      border: 2.5px solid #e0f2fe;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.9);
+    }
+    /* 风怒旋转气流层 */
+    @keyframes windSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .windfury-ring {
+      border: 2px dashed rgba(167, 243, 208, 0.75);
+      animation: windSpin 5s linear infinite;
+    }
+    /* 手牌扇形与丝滑上浮 */
+    .hand-card {
+      transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.12), box-shadow 0.18s ease;
+      transform-origin: bottom center;
+    }
+    .hand-card:hover {
+      transform: translateY(-32px) scale(1.18) rotate(0deg) !important;
+      z-index: 65 !important;
+    }
+    .hand-card.card-selected {
+      transform: translateY(-38px) scale(1.2) rotate(0deg) !important;
+      z-index: 70 !important;
+      box-shadow: 0 0 0 3px #facc15, 0 16px 32px rgba(0, 0, 0, 0.85) !important;
+    }
+    /* 英雄石雕拱门框 */
+    .hero-arch {
+      border-radius: 50% 50% 14% 14% / 58% 58% 14% 14%;
+      border: 4px solid #e5b842;
+      outline: 2px solid #42260d;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.82), inset 0 0 14px rgba(0,0,0,0.7);
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease;
+    }
+    /* 随从椭圆立体棋子 */
+    .minion-token {
+      border-radius: 50% / 46%;
+      border: 3.5px solid #d6b87c;
+      outline: 2px solid #3a2410;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.72), inset 0 0 12px rgba(0,0,0,0.6);
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease;
+    }
+    .minion-token:hover {
+      transform: scale(1.07);
+      z-index: 35;
+    }
+    /* 受击闪红与屏幕震动 */
+    @keyframes hitFlash {
+      0%, 100% { filter: brightness(1); }
+      40% { filter: brightness(2.1) sepia(0.6) hue-rotate(-35deg); }
+    }
+    .hit-flash {
+      animation: hitFlash 0.28s ease-out;
+    }
+    @keyframes boardShake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-7px, 5px); }
+      40% { transform: translate(7px, -5px); }
+      60% { transform: translate(-5px, -3px); }
+      80% { transform: translate(5px, 4px); }
+    }
+    .shake-anim {
+      animation: boardShake 0.32s ease-in-out;
+    }
+    @keyframes floatPop {
+      0% { opacity: 0; transform: translate(-50%, -25%) scale(0.5); }
+      22% { opacity: 1; transform: translate(-50%, -55%) scale(1.28); }
+      75% { opacity: 1; transform: translate(-50%, -88%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -120%) scale(0.85); }
+    }
+    .floating-badge {
+      position: fixed;
+      pointer-events: none;
+      z-index: 120;
+      animation: floatPop 1.08s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes zzzFloat {
+      0% { opacity: 0; transform: translate(0, 2px) scale(0.75); }
+      50% { opacity: 0.95; transform: translate(5px, -6px) scale(1.05); }
+      100% { opacity: 0; transform: translate(10px, -14px) scale(0.85); }
+    }
+    .zzz-anim {
+      animation: zzzFloat 1.8s infinite ease-in-out;
+    }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.25); }
+    ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.5); border-radius: 9999px; }
