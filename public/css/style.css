@@ -279,3 +279,45 @@
       border-radius: 0.75rem;
       box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45), 0 0 16px rgba(251, 191, 36, 0.55);
     }
+
+    /* ============ 移动端（≤640px）手牌与面板适配 ============
+       只影响窄屏，桌面布局不变。
+       手牌扇形外侧卡牌的下沉偏移（yOff 最高约 11px）+ 旋转底角
+       会把卡底推出 h-36（144px）的手牌区、被视口底部裁掉，
+       因此窄屏下把手牌区加高到 176px，让卡底完整落入视口。 */
+    @media (max-width: 639px) {
+      #player-hand-section {
+        height: 11rem;
+        padding-bottom: 0.5rem;
+      }
+      /* 手牌重叠加深（-20px），窄屏横向能多露出几张牌 */
+      #player-hand-row > * + * {
+        margin-left: -1.25rem;
+      }
+      /* 悬停/选中上浮幅度收小，避免窄屏下卡牌顶出牌桌 */
+      .hand-card:hover {
+        transform: translateY(-20px) scale(1.12) rotate(0deg) !important;
+      }
+      .hand-card.card-selected {
+        transform: translateY(-24px) scale(1.14) rotate(0deg) !important;
+      }
+      /* 战报抽屉：窄屏下宽度不超过视口的 86%，且贴右缘不越界 */
+      #battle-log-drawer {
+        width: min(86vw, 16rem);
+        max-width: 86vw;
+      }
+      /* 战报条目里的长词（卡名/长串）不断行会顶出右缘：强制断词 */
+      #battle-log-list > div {
+        overflow-wrap: break-word;
+        word-break: break-word;
+      }
+      /* 左侧历史行动栏：默认 lg 以下隐藏；若被显示，务必完整落在视口内 */
+      #history-strip {
+        left: 0.5rem;
+        max-height: 60vh;
+      }
+      /* 顶栏标题在窄屏下可收缩，避免把右侧按钮推出视口 */
+      header h1 {
+        max-width: 32vw;
+      }
+    }

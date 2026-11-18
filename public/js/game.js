@@ -789,6 +789,418 @@
       }
     };
 
+    // =========================================================================
+    // F3. 双语（中文 / English）
+    // 语言切换：顶栏按钮，localStorage 持久化（hs_tavern_lang），默认中文。
+    // 卡牌/英雄/BOSS/宝藏名称用“并行英文表 + 运行时换名”，不改任何读取 tpl.name/desc 的调用点。
+    // =========================================================================
+    let currentLang = 'zh';
+    try { currentLang = localStorage.getItem('hs_tavern_lang') || 'zh'; } catch (e) { currentLang = 'zh'; }
+    if (currentLang !== 'en') currentLang = 'zh';
+
+    const CARD_EN = {
+      coin: { name: 'Lucky Coin', desc: 'Gain 1 temporary Mana Crystal this turn.' },
+      arcane_missiles: { name: 'Arcane Missiles', desc: 'Deal $3$ damage randomly split among all enemies.' },
+      elven_archer: { name: 'Elven Archer', desc: 'Battlecry: Deal 1 damage.' },
+      argent_squire: { name: 'Argent Squire', desc: 'Divine Shield.' },
+      goldshire_footman: { name: 'Goldshire Footman', desc: 'Taunt.' },
+      mana_wyrm: { name: 'Mana Wyrm', desc: 'Whenever you cast a spell, gain +1 Attack.' },
+      primordial_glyph: { name: 'Primordial Glyph', desc: 'Discover a spell. It costs (2) less.' },
+      explosive_trap: { name: 'Explosive Trap', desc: 'Secret: When your hero is attacked, deal $2$ damage to all enemies.' },
+      frostbolt: { name: 'Frostbolt', desc: 'Deal $3$ damage to a character and Freeze it.' },
+      loot_hoarder: { name: 'Loot Hoarder', desc: 'Deathrattle: Draw a card.' },
+      kobold_geomancer: { name: 'Kobold Geomancer', desc: 'Spell Damage +1.' },
+      explosive_sheep: { name: 'Explosive Sheep', desc: 'Deathrattle: Deal 2 damage to all minions.' },
+      stonehill_defender: { name: 'Stonehill Defender', desc: 'Taunt. Battlecry: Discover a Taunt minion.' },
+      emperor_cobra: { name: 'Emperor Cobra', desc: 'Poisonous (destroy any minion damaged by this minion).' },
+      acolyte_of_pain: { name: 'Acolyte of Pain', desc: 'Whenever this minion takes damage, draw a card.' },
+      mirror_entity: { name: 'Mirror Entity', desc: 'Secret: After your opponent plays a minion, summon a copy of it.' },
+      ice_barrier: { name: 'Ice Barrier', desc: 'Secret: When your hero is attacked, gain 8 Armor.' },
+      fiery_war_axe: { name: 'Fiery War Axe', desc: 'Equip a 3/2 axe. Your hero can attack.' },
+      arcane_intellect: { name: 'Arcane Intellect', desc: 'Draw two cards.' },
+      harvest_golem: { name: 'Harvest Golem', desc: 'Deathrattle: Summon a 2/1 Damaged Golem.' },
+      shattered_sun: { name: 'Shattered Sun Cleric', desc: 'Battlecry: Give a friendly minion +1/+1.' },
+      wolfrider: { name: 'Wolfrider', desc: 'Charge.' },
+      astral_mystic: { name: 'Astral Mystic', desc: 'Battlecry: Discover a powerful Legendary or Epic card!' },
+      fireball: { name: 'Fireball', desc: 'Deal $6$ damage to a target.' },
+      polymorph: { name: 'Polymorph', desc: 'Transform a minion into a 1/1 Sheep.' },
+      senjin_shieldmasta: { name: "Sen'jin Shieldmasta", desc: 'Taunt.' },
+      truesilver_champion: { name: 'Truesilver Champion', desc: 'Whenever your hero attacks, restore 2 Health to it.' },
+      spellbreaker: { name: 'Spellbreaker', desc: 'Battlecry: Silence a minion, removing all its effects.' },
+      holy_nova: { name: 'Holy Nova', desc: 'Deal $2$ damage to all enemies. Restore 2 Health to all friendly characters.' },
+      doomhammer: { name: 'Doomhammer', desc: 'Windfury (your hero can attack twice each turn!).' },
+      zilliax: { name: 'Zilliax', desc: 'Divine Shield, Taunt, Lifesteal, Rush.' },
+      azure_drake: { name: 'Azure Drake', desc: 'Spell Damage +1. Battlecry: Draw a card.' },
+      sludge_belcher: { name: 'Sludge Belcher', desc: 'Taunt. Deathrattle: Summon a 1/2 Sludge with Taunt.' },
+      argent_commander: { name: 'Argent Commander', desc: 'Charge, Divine Shield.' },
+      siphon_soul: { name: 'Siphon Soul', desc: 'Destroy a minion. Restore 3 Health to your hero.' },
+      flamestrike: { name: 'Flamestrike', desc: 'Deal $4$ damage to all enemy minions.' },
+      dr_boom: { name: 'Dr. Boom', desc: 'Battlecry: Summon two 1/1 Boom Bots (Deathrattle: deal 1-4 damage to a random enemy).' },
+      lich_king: { name: 'The Lich King', desc: 'Taunt. At the end of your turn, add a random overpowered Death Knight card to your hand!' },
+      ragnaros: { name: 'Ragnaros the Firelord', desc: "Can't attack. At the end of your turn, deal 8 damage to a random enemy!" },
+      dk_death_coil: { name: 'Death Coil', desc: 'Death Knight card: Deal $4$ damage to a target and draw a card.' },
+      dk_army_buff: { name: 'Anti-Magic Shell', desc: 'Death Knight card: Give your minions +2/+2 and Divine Shield!' },
+      dk_frostmourne: { name: 'Frostmourne', desc: 'Death Knight blade: 5/2 weapon. Restore 3 Health whenever you attack.' },
+      silver_recruit: { name: 'Silver Hand Recruit', desc: 'Silver Hand Recruit.' },
+      damaged_golem: { name: 'Damaged Golem', desc: 'A golem in pieces.' },
+      slime_taunt: { name: 'Sludge', desc: 'Taunt.' },
+      sheep_token: { name: 'Sheep', desc: 'Baa~' },
+      boom_bot: { name: 'Boom Bot', desc: 'Deathrattle: Deal 1-4 damage to a random enemy.' }
+    };
+
+    const HERO_EN = {
+      mage: { name: 'Archmage Eileen', title: 'Arcane Mage', skillName: 'Fireblast', skillDesc: 'Hero Power: Deal 1 damage to any target.' },
+      paladin: { name: 'Marshal Lothar', title: 'Paladin', skillName: 'Reinforce', skillDesc: 'Hero Power: Summon a 1/1 Silver Hand Recruit.' },
+      hunter: { name: 'Ranger Wren', title: 'Hunter', skillName: 'Steady Shot', skillDesc: 'Hero Power: Deal 2 damage to the enemy hero.' }
+    };
+
+    const BOSS_EN = [
+      { name: 'Sylvara the Dark Ranger', skillTitle: 'Shadow Arrow (2 mana: deal 2 damage to the enemy hero)' },
+      { name: 'Sindragosa the Ice Witch', skillTitle: "Winter's Breath (2 mana: Freeze a random enemy and deal 1 damage)" },
+      { name: 'Nepharis the Obsidian Dragon', skillTitle: 'Worldbreaker Breath (2 mana: deal 2 damage to a random enemy and gain 2 Armor)' }
+    ];
+
+    const TREASURE_EN = {
+      orb_of_khadgar: { name: "Khadgar's Scrying Orb", desc: 'Passive treasure: Your spells cost (1) less.' },
+      silver_horn: { name: 'Silver Horn', desc: 'Passive treasure: Whenever you summon a minion, give it +1/+1 permanently.' },
+      tree_of_life: { name: 'Sapling of the World Tree', desc: 'Passive treasure: Your hero has +10 max Health and heals 2 Health at the start of your turn.' },
+      astral_crystal: { name: 'Astral Charge Crystal', desc: 'Passive treasure: Start with 1 extra Mana Crystal and draw 1 extra card at the start.' },
+      stormwind_banner: { name: 'Stormwind Royal Banner', desc: 'Passive treasure: Your Hero Power costs (1) and can be used twice per turn!' }
+    };
+
+    // 界面文案（data-i18n 静态元素与 t() 动态文案共用同一张表）
+    const I18N = {
+      zh: {
+        you: '你', lang_btn: 'EN', lang_title: '切换到 English',
+        btn_tutorial: '引导', btn_new_game: '换职/新局', btn_concede: '认输', btn_concede_confirm: '确认认输？',
+        btn_deck_builder: '组牌工坊', btn_codex: '图鉴规则', btn_log: '战报', btn_sound: '切换音效',
+        score_wins: '胜场', dungeon_stage: '地下城第 {n} 层', enemy_deck: '敌方牌库', turn_badge: '第 {n} 回合', dungeon_badge: '🏰 地下城 {n}/3', dungeon_suffix: ' · 地下城第 {n}/3 关【{boss}】',
+        difficulty_standard: '🍺 标准酒馆', difficulty_heroic: '🐉 英雄黑龙',
+        sp_pill: '✨ 法伤 +{n}',
+        tip_enemy: '🐉 {boss}正在运筹出牌...', tip_target: '🎯 请点击发光边框的有效目标（按 Esc 取消）',
+        tip_selected: '✨ 再次点击该卡牌或点击战场中央即可打出',
+        tip_default: '💡 悬停卡牌可看大图，点击或拖拽绿光牌与随从行动',
+        end_opponent: '对手回合', end_done: '回合结束 ✓', end_turn: '结束回合', end_over: '对局已结束',
+        victory: '璀璨胜利！', victory_dungeon: '制霸地下城！', defeat: '惜败退场', draw: '同归于尽！',
+        victory_desc: '精彩绝伦的博弈！你击败了{boss}，酒馆全员为你欢呼干杯！',
+        victory_desc_dungeon: '不可思议！你连克三大地下城首领，夺得了酒馆最高传奇荣耀！',
+        defeat_desc: '{boss}略胜一筹，前往【组牌工坊】微调法力曲线再战一局吧！',
+        draw_desc: '双方英雄在烈焰中同时倒下，这是一场载入酒馆史册的平局！',
+        stat_turns: '总回合数', stat_cards: '打出卡牌', stat_wins: '累计胜场',
+        stat_dmg_dealt: '对英雄伤害', stat_dmg_taken: '受到伤害', stat_summoned: '召唤随从', stat_destroyed: '消灭敌方随从',
+        play_again: '再来一局', change_hero: '切换职业',
+        toast_no_mana: '我没有足够的法力值！', toast_board_full: '战场上随从已经满了（最多 7 个）！',
+        toast_hp_mana: '法力值不足，无法使用英雄技能！', toast_hand_full: '手牌已满 10 张，无法置入更多卡牌！',
+        toast_discover_first: '请先完成发现选择',
+        rarity_legendary: '★ 传说卡牌', rarity_epic: '◆ 史诗卡牌', rarity_rare: '● 稀有卡牌', rarity_common: '普通卡牌',
+        rarity_dk: '👑死骑衍生', rarity_legendary_s: '★传说', rarity_epic_s: '史诗', rarity_rare_s: '稀有', rarity_common_s: '普通',
+        type_minion: '随从', type_weapon: '武器', type_spell: '法术', type_secret: '奥秘',
+        codex_count_suffix: '张全卡牌图鉴', freeze_suffix: '并冻结',
+        mulligan_title: '起手换牌阶段', mulligan_desc: '点击高费卡牌标上 ❌ 将换回牌库重抽，确认后立即开战！', mulligan_confirm: '确认起手 · 开始对决！',
+        mulligan_first: '⚡ 先手开局', mulligan_second: '🪙 后手开局（确认后额外获赠 0 费幸运币）',
+        discover_badge: '✨ 奥术发现 (Discover)', discover_title_spell: '挑选一张法术（法力消耗 -{n}）', discover_title_any: '挑选一张卡牌置入手牌',
+        discover_subtitle: '根据当前战局选择最理想的一张支援手牌',
+        treasure_badge: '🏰 地下城第 {n} 层突破！', treasure_title: '选择一件远古被动宝藏', treasure_subtitle: '永久强化本轮地下城征程，下一战对手：【{boss}】',
+        deck_title: '🃏 酒馆套牌构筑工坊', deck_desc: '点击左侧卡牌加入套牌，点击右侧条目移除（同名普通/稀有/史诗限2张，★传说限1张，满 22 张可开战）',
+        deck_auto: '✨ 智能推荐满编', deck_clear: '清空', deck_save: '保存并用此套牌开战', deck_close: '关闭',
+        deck_filter: '法力筛选:', deck_filter_all: '全部',
+        codex_title_prefix: '📖 酒馆规则与', codex_title_suffix: '张全卡牌图鉴',
+        codex_subtitle: '涵盖发现、奥秘、突袭、风怒、吸血、剧毒、战吼、亡语、沉默与地下城宝藏',
+        codex_pool_title: '全收集牌池与巫妖王专属衍生牌一览：', close: '关闭',
+        rule_discover: '<strong class="text-purple-300">✨ 发现：</strong>从三张符合条件的随机卡牌中选择一张置入你的手牌。',
+        rule_secret: '<strong class="text-pink-300">❓ 奥秘：</strong>隐藏法术，当对手在回合中触发特定条件时自动揭晓生效。',
+        rule_rush: '<strong class="text-emerald-300">🏃 突袭 / ⚡冲锋：</strong>突袭登场当回合可攻击随从；冲锋可直接攻击英雄。',
+        rule_lifesteal: '<strong class="text-rose-300">🩸 吸血：</strong>造成伤害时，为你的英雄恢复等量的生命值。',
+        rule_poisonous: '<strong class="text-lime-300">☠️ 剧毒：</strong>消灭任何受到该随从伤害的非圣盾随从。',
+        rule_windfury: '<strong class="text-teal-300">🌪️ 风怒：</strong>每个回合可以发起两次攻击！',
+        rule_taunt: '<strong class="text-amber-300">🛡️ 嘲讽 / ✨圣盾：</strong>嘲讽强制优先受击；圣盾免疫第一次任意伤害。',
+        rule_freeze: '<strong class="text-sky-300">❄️ 冻结 / 🔇沉默：</strong>冻结跳过下次攻击；沉默抹除随从所有词条与增益。',
+        newgame_title: '⚔️ 选择出战英雄与游戏模式', newgame_back: '返回牌局',
+        newgame_step1: '1. 选择你的专属英雄（均配独立原画肖像与职业套牌）：', newgame_step2: '2. 选择挑战模式：', newgame_step3: '3. 先后手设置：',
+        newgame_start: '🔥 开启全新对局',
+        hero_mage_name: '大法师艾琳', hero_mage_title: '奥术法师', hero_mage_desc: '技能【火焰冲击】：2费点伤1点。擅长【远古雕文】发现减费法术、【寒冰护体】奥秘与高额法强清场。',
+        hero_paladin_name: '圣光统帅洛萨', hero_paladin_title: '圣殿骑士', hero_paladin_desc: '技能【白银援军】：2费召1/1新兵。擅长圣盾铺场、【石丘防御者】发现嘲讽、【齐利亚斯】磁力吸血与圣剑。',
+        hero_hunter_name: '荒野游侠雷恩', hero_hunter_title: '丛林猎手', hero_hunter_desc: '技能【稳固射击】：2费对敌英雄打2。擅长【爆炸陷阱】奥秘、【雷霆战锤】风怒双砍、剧毒与冲锋抢血。',
+        diff_normal: '🍺 标准酒馆 (30血)', diff_heroic: '🐉 英雄黑龙 (40血+5甲)', diff_dungeon: '🏰 地下城闯关 (3连战+宝藏)',
+        order_first: '⚡ 先手 (3张牌)', order_second: '🪙 后手 (4张+幸运币)',
+        deck_current: '当前套牌', deck_curve: '法力曲线 (Mana Curve)',
+        deck_full: '套牌已满 22 张！可点击右侧卡牌移除后再添加。', deck_limit_legendary: '传说卡牌每套牌限带 1 张！', deck_limit_copy: '同名卡牌每套牌最多携带 2 张！',
+        deck_need_22: '套牌需要恰好 22 张卡牌（当前 {n}/22），也可点“智能推荐满编”！', deck_saved: '✅ 专属套牌已保存，立即开启新对局！',
+        toast_secret_mounted: '同名奥秘已挂载或奥秘栏已满！', toast_recruit_full: '战场随从已满，无法召唤新兵！', toast_mirror: '❓ 奥秘触发：镜像实体复制了【{name}】！',
+        cards_unit: '张', deck_label: '牌库', hand_label: '手牌', deck_tooltip: '牌库抽空后每次抽牌将受到递增的疲劳伤害',
+        target_spell: '正在使用【{name}】：请点击高亮目标', target_hero_power: '英雄技能【{name}】：请选择目标',
+        target_rush: '【突袭】激活：请选择要攻击的敌方随从', target_attack: '请选择要攻击的敌方目标',
+        toast_explosive: '❓ 奥秘触发：爆炸陷阱！', toast_no_spell_target: '场上没有有效的法术目标！', toast_hp_used: '本回合英雄技能使用次数已用尽！',
+        toast_hero_frozen: '角色已被冻结，本回合无法攻击！', toast_hero_exhausted: '你的英雄本回合攻击次数已用尽！',
+        toast_cant_attack: '该随从无法主动发起攻击！', toast_minion_frozen: '随从已被冻结，无法攻击！',
+        toast_rush_minion_only: '具有【突袭】的随从登场首回合只能攻击敌方随从！', toast_summoning_sick: '随从刚登场需要准备一回合（突袭/冲锋除外）！',
+        toast_minion_exhausted: '该随从本回合攻击次数已用尽！', toast_rush_no_hero: '【突袭】随从登场当回合不能攻击敌方英雄！',
+        toast_taunt_first: '你必须先攻击具有嘲讽的随从！', toast_cheers: '🍺 干杯！愿炉石指引你的神抽！', toast_turn: '第 {n} 回合 · 你的回合',
+        tip_deck_remove: '点击移除 1 张', tip_enemy_hp: '敌方英雄技能：熔岩龙息（2费：造成1点伤害并获得1点护甲）', tip_hp_cost: '（当前消耗 {n} 费）',
+        tip_secret_own: '已挂载奥秘：【{name}】', tip_secret_enemy: '敌方奥秘：触发特定条件时揭晓！', tip_windfury: ' · 风怒',
+        tip_weapon_empty: '武器栏：打出武器牌后英雄可亲自发起攻击', board_empty_friendly: '— 我方战线（最多 7 名随从）—', board_empty_enemy: '— 敌方战线 —',
+        your_hero: '你的英雄'
+      },
+      en: {
+        you: 'You', lang_btn: '中文', lang_title: 'Switch to 中文',
+        btn_tutorial: 'Guide', btn_new_game: 'New Game', btn_concede: 'Concede', btn_concede_confirm: 'Confirm Concede?',
+        btn_deck_builder: 'Deck Builder', btn_codex: 'Codex & Rules', btn_log: 'Battle Log', btn_sound: 'Toggle sound',
+        score_wins: 'Wins', dungeon_stage: 'Dungeon Floor {n}', enemy_deck: 'Enemy Deck', turn_badge: 'Turn {n}', dungeon_badge: '🏰 Dungeon {n}/3', dungeon_suffix: ' · Dungeon Floor {n}/3 【{boss}】',
+        difficulty_standard: '🍺 Standard Tavern', difficulty_heroic: '🐉 Heroic Dragon',
+        sp_pill: '✨ Spell Damage +{n}',
+        tip_enemy: '🐉 {boss} is plotting their moves...', tip_target: '🎯 Click a glowing valid target (Esc to cancel)',
+        tip_selected: '✨ Click the card again or click the middle of the board to play it',
+        tip_default: '💡 Hover a card for a big preview; click or drag glowing cards and minions to act',
+        end_opponent: "Opponent's Turn", end_done: 'End Turn ✓', end_turn: 'End Turn', end_over: 'Game Over',
+        victory: 'Glorious Victory!', victory_dungeon: 'Dungeon Conquered!', defeat: 'Defeat', draw: 'Mutual Destruction!',
+        victory_desc: 'A brilliant duel! You defeated {boss} — the whole tavern cheers for you!',
+        victory_desc_dungeon: 'Unbelievable! You conquered all three dungeon bosses and claimed the tavern\'s highest legendary honor!',
+        defeat_desc: '{boss} had the edge this time. Tune your mana curve in the 【Deck Builder】 and fight again!',
+        draw_desc: 'Both heroes fell in the flames at once — a draw for the tavern history books!',
+        stat_turns: 'Turns', stat_cards: 'Cards Played', stat_wins: 'Total Wins',
+        stat_dmg_dealt: 'Hero Damage Dealt', stat_dmg_taken: 'Damage Taken', stat_summoned: 'Minions Summoned', stat_destroyed: 'Enemy Minions Destroyed',
+        play_again: 'Play Again', change_hero: 'Change Hero',
+        toast_no_mana: 'Not enough Mana!', toast_board_full: 'The board is full (max 7 minions)!',
+        toast_hp_mana: 'Not enough Mana for your Hero Power!', toast_hand_full: 'Your hand is full (10 cards)!',
+        toast_discover_first: 'Please finish your Discover pick first',
+        rarity_legendary: '★ Legendary', rarity_epic: '◆ Epic', rarity_rare: '● Rare', rarity_common: 'Common',
+        rarity_dk: '👑 Death Knight', rarity_legendary_s: '★ Legendary', rarity_epic_s: 'Epic', rarity_rare_s: 'Rare', rarity_common_s: 'Common',
+        type_minion: 'Minion', type_weapon: 'Weapon', type_spell: 'Spell', type_secret: 'Secret',
+        codex_count_suffix: 'cards in the Codex', freeze_suffix: ' and Freeze it',
+        mulligan_title: 'Mulligan Phase', mulligan_desc: 'Click expensive cards to mark ❌ — they will be shuffled back and redrawn. Confirm to start the duel!', mulligan_confirm: 'Confirm Hand · Start the Duel!',
+        mulligan_first: '⚡ Going first', mulligan_second: '🪙 Going second (you get a free 0-cost Lucky Coin after confirming)',
+        discover_badge: '✨ Arcane Discover', discover_title_spell: 'Pick a spell (costs {n} less)', discover_title_any: 'Pick a card to add to your hand',
+        discover_subtitle: 'Choose the best support card for the current board',
+        treasure_badge: '🏰 Dungeon Floor {n} cleared!', treasure_title: 'Choose an ancient passive treasure', treasure_subtitle: 'Permanently empower this dungeon run. Next opponent: 【{boss}】',
+        deck_title: '🃏 Tavern Deck Builder', deck_desc: 'Click a card on the left to add it; click an entry on the right to remove it (max 2 copies, 1 for Legendaries; 22 cards to start a match)',
+        deck_auto: '✨ Auto-Fill (Recommended)', deck_clear: 'Clear', deck_save: 'Save & Play This Deck', deck_close: 'Close',
+        deck_filter: 'Mana filter:', deck_filter_all: 'All',
+        codex_title_prefix: '📖 Tavern Rules &', codex_title_suffix: 'cards in the Codex',
+        codex_subtitle: 'Covers Discover, Secrets, Rush, Windfury, Lifesteal, Poisonous, Battlecry, Deathrattle, Silence & dungeon treasures',
+        codex_pool_title: 'Full collectible pool & Lich King exclusive cards:', close: 'Close',
+        rule_discover: '<strong class="text-purple-300">✨ Discover:</strong> Choose one of three random matching cards to add to your hand.',
+        rule_secret: '<strong class="text-pink-300">❓ Secret:</strong> A hidden spell that reveals itself when your opponent meets its condition.',
+        rule_rush: '<strong class="text-emerald-300">🏃 Rush / ⚡Charge:</strong> Rush can attack minions the turn it is played; Charge can attack heroes too.',
+        rule_lifesteal: '<strong class="text-rose-300">🩸 Lifesteal:</strong> Restore Health to your hero equal to the damage dealt.',
+        rule_poisonous: '<strong class="text-lime-300">☠️ Poisonous:</strong> Destroy any non-Divine-Shield minion damaged by this minion.',
+        rule_windfury: '<strong class="text-teal-300">🌪️ Windfury:</strong> Can attack twice each turn!',
+        rule_taunt: '<strong class="text-amber-300">🛡️ Taunt / ✨Divine Shield:</strong> Taunt must be attacked first; Divine Shield blocks the first damage.',
+        rule_freeze: '<strong class="text-sky-300">❄️ Freeze / 🔇Silence:</strong> Frozen minions skip their next attack; Silence removes all keywords and buffs.',
+        newgame_title: '⚔️ Choose Your Hero & Game Mode', newgame_back: 'Back to Game',
+        newgame_step1: '1. Choose your hero (each with unique art and a class deck):', newgame_step2: '2. Choose a game mode:', newgame_step3: '3. Turn order:',
+        newgame_start: '🔥 Start a New Match',
+        hero_mage_name: 'Archmage Eileen', hero_mage_title: 'Arcane Mage', hero_mage_desc: 'Hero Power 【Fireblast】: 2 mana, deal 1 damage. Excels at 【Primordial Glyph】 Discover discounts, 【Ice Barrier】 Secrets and big Spell Damage clears.',
+        hero_paladin_name: 'Marshal Lothar', hero_paladin_title: 'Paladin', hero_paladin_desc: 'Hero Power 【Reinforce】: 2 mana, summon a 1/1 Recruit. Excels at Divine Shield boards, 【Stonehill Defender】 Taunt Discover, 【Zilliax】 Lifesteal and holy blades.',
+        hero_hunter_name: 'Ranger Wren', hero_hunter_title: 'Hunter', hero_hunter_desc: 'Hero Power 【Steady Shot】: 2 mana, deal 2 damage to the enemy hero. Excels at 【Explosive Trap】 Secrets, 【Doomhammer】 Windfury double strikes, Poisonous and Charge burst.',
+        diff_normal: '🍺 Standard Tavern (30 HP)', diff_heroic: '🐉 Heroic Dragon (40 HP + 5 Armor)', diff_dungeon: '🏰 Dungeon Run (3 battles + treasures)',
+        order_first: '⚡ First (3 cards)', order_second: '🪙 Second (4 cards + The Coin)',
+        deck_current: 'Current Deck', deck_curve: 'Mana Curve',
+        deck_full: 'Deck is full (22 cards)! Remove a card on the right first.', deck_limit_legendary: 'Legendary cards: max 1 copy per deck!', deck_limit_copy: 'Max 2 copies of the same card per deck!',
+        deck_need_22: 'Your deck needs exactly 22 cards (currently {n}/22). You can also tap "Auto-Fill"!', deck_saved: '✅ Your custom deck is saved — starting a new match!',
+        toast_secret_mounted: 'That Secret is already active or your Secret slots are full!', toast_recruit_full: 'The board is full — cannot summon a Recruit!', toast_mirror: '❓ Secret triggered: Mirror Entity copied 【{name}】!',
+        cards_unit: 'cards', deck_label: 'Deck', hand_label: 'Hand', deck_tooltip: 'When your deck is empty, each draw deals increasing fatigue damage',
+        target_spell: 'Using 【{name}】: click a highlighted target', target_hero_power: 'Hero Power 【{name}】: choose a target',
+        target_rush: '【Rush】 active: choose an enemy minion to attack', target_attack: 'Choose an enemy target to attack',
+        toast_explosive: '❓ Secret triggered: Explosive Trap!', toast_no_spell_target: 'No valid spell target on the board!', toast_hp_used: 'Hero Power already used this turn!',
+        toast_hero_frozen: 'Frozen — cannot attack this turn!', toast_hero_exhausted: 'Your hero has already attacked this turn!',
+        toast_cant_attack: 'This minion cannot attack!', toast_minion_frozen: 'This minion is Frozen and cannot attack!',
+        toast_rush_minion_only: '【Rush】 minions can only attack enemy minions on the turn they are played!', toast_summoning_sick: 'This minion just arrived and needs a turn to prepare (except Rush/Charge)!',
+        toast_minion_exhausted: 'This minion has already attacked this turn!', toast_rush_no_hero: '【Rush】 minions cannot attack the enemy hero on the turn they are played!',
+        toast_taunt_first: 'You must attack a Taunt minion first!', toast_cheers: '🍺 Cheers! May the Hearthstone guide your topdecks!', toast_turn: 'Turn {n} · Your turn',
+        tip_deck_remove: 'Click to remove 1 copy', tip_enemy_hp: 'Enemy Hero Power: Molten Dragon Breath (2 mana: deal 1 damage and gain 1 Armor)', tip_hp_cost: ' (Current cost: {n} mana)',
+        tip_secret_own: 'Active Secret: 【{name}】', tip_secret_enemy: 'Enemy Secret: reveals when its condition is met!', tip_windfury: ' · Windfury',
+        tip_weapon_empty: 'Weapon slot: play a weapon card and your hero can attack directly', board_empty_friendly: '— Your board (max 7 minions) —', board_empty_enemy: '— Enemy board —',
+        your_hero: 'Your hero'
+      }
+    };
+    function t(key, vars) {
+      let s = (I18N[currentLang] && I18N[currentLang][key] !== undefined) ? I18N[currentLang][key] : (I18N.zh[key] !== undefined ? I18N.zh[key] : key);
+      if (vars) for (const k in vars) s = s.split('{' + k + '}').join(String(vars[k]));
+      return s;
+    }
+
+    // 战报消息模板（{...} 为占位符；卡牌名随 CARD_EN 自动切换）
+    const LOG_T = {
+      zh: {
+        fatigue: '⚠️ {who}牌库已空！受到 {n} 点疲劳伤害！',
+        mill: '🔥 {who}手牌已满，【{name}】被爆牌销毁！',
+        divineShield: '✨ 【{name}】的圣盾抵消了伤害！',
+        drawOnDamage: '⛓️ 【{name}】受到伤害，触发抽一张牌！',
+        poisonous: '☠️ 剧毒生效，直接消灭【{name}】！',
+        secret_armor: '❓ 奥秘揭晓！【寒冰护体】触发，立即获得 8 点护甲！',
+        secret_aoe: '❓ 奥秘揭晓！【爆炸陷阱】引爆，对所有敌人造成 {dmg} 点伤害！',
+        secret_copy: '❓ 奥秘揭晓！【镜像实体】召唤了【{name}】的镜像复制！',
+        minion_died: '💀 【{name}】阵亡。',
+        dr_draw: '💀 亡语触发：【{name}】抽一张牌。',
+        dr_golem: '⚙️ 亡语触发：召唤了 2/1 的【损坏的傀儡】。',
+        dr_slime: '🧪 亡语触发：召唤了 1/2 嘲讽【剧毒泥浆怪】。',
+        dr_sheep: '💣 【自爆绵羊】爆炸！对全场所有随从造成 2 点伤害！',
+        dr_boombot: '🧨 砰砰机器人爆炸，对{label}造成 {dmg} 点伤害！',
+        discover_pick: '✨ 你通过【发现】选择了【{name}】置入手牌！',
+        secret_play: '❓ {who}挂上了一道神秘的【奥秘】！',
+        weapon_equip: '⚔️ {who}装备了武器【{name}】({atk}/{dur})。',
+        summon: '📣 {who}召唤了【{name}】({atk}/{hp})。',
+        dr_boom_summon: '🤖 砰砰博士召唤了两个【砰砰机器人】！',
+        battlecry_dmg: '🏹 【{name}】战吼对{label}造成 {dmg} 点伤害。',
+        battlecry_buff: '☀️ 【{name}】使{label}获得 +1/+1。',
+        battlecry_silence: '🔇 【{name}】沉默了{label}！',
+        coin: '🪙 {who}使用【幸运币】，本回合获得 1 颗法力水晶。',
+        glyph: '🔯 {who}施放【{name}】，开启奥术发现！',
+        army_buff: '🛡️ {who}施放【{name}】，全体友方随从获得 +2/+2 与圣盾！',
+        siphon: '🩸 {who}施放【暗影虹吸】消灭了{label}，并恢复 {heal} 点生命！',
+        draw_spell: '📘 {who}施放【{name}】，抽 {n} 张牌。',
+        missiles: '☄️ {who}施放【奥术飞弹】，发射 {n} 枚飞弹！',
+        polymorph: '🐑 {who}施放【变形术】，将【{name}】变成了 1/1 的绵羊！',
+        holy_nova: '🌟 {who}施放【神圣新星】，对所有敌人造成 {dmg} 点伤害并为友方恢复 2 点生命！',
+        flamestrike: '🌋 {who}施放【{name}】，对所有敌方随从造成 {dmg} 点伤害！',
+        base_dmg: '🔥 {who}对{label}施放【{name}】，造成 {dmg} 点伤害{freeze}！',
+        hp_recruit: '🛡️ 你使用【白银援军】，召唤了白银新兵。',
+        hp_hunter: '🏹 你使用【稳固射击】，对{boss}造成 2 点伤害！',
+        hp_mage: '🔥 你使用【火焰冲击】，对{label}造成 1 点伤害。',
+        hero_atk_minion: '⚔️ {who}劈砍{label}！',
+        hero_atk_hero: '⚔️ {who}直击敌方英雄，造成 {dmg} 点伤害！',
+        weapon_break: '🔨 武器【{name}】耐久耗尽碎裂。',
+        minion_vs_minion: '⚔️ 【{name}】与{label}激烈交锋！',
+        minion_atk: '⚔️ 【{name}】攻击{label}，造成 {dmg} 点伤害！',
+        lich_king_gift: '👑 【巫妖王阿尔萨斯】赐予了一张死亡骑士神卡！',
+        rag_snipe: '☄️ “让火焰净化一切！”【{name}】轰击{label}造成 {dmg} 点伤害！',
+        turn_player: '🌟 === 第 {n} 回合：你的回合 ({mana} 法力) ===',
+        turn_enemy: '🐉 === {boss}的回合 ({mana} 法力) ===',
+        boss_hunter: '🏹 {boss}使用【暗影冷箭】，对你的英雄造成 2 点伤害！',
+        boss_frost: '❄️ {boss}使用【凛冬吐息】，冻结{label}并造成 1 点伤害！',
+        boss_dragon: '🔥 {boss}使用【熔岩龙息】，获得 {n} 点护甲并对{label}造成 {n} 点伤害！',
+        game_start: '🍺 对决打响！你是【{hero}】，迎战【{boss}】！',
+        concede: '你认输了本局对战。'
+      },
+      en: {
+        fatigue: '⚠️ {who} deck is empty! Takes {n} fatigue damage!',
+        mill: '🔥 {who} hand is full! 【{name}】 is milled and destroyed!',
+        divineShield: '✨ 【{name}】 Divine Shield blocked the damage!',
+        drawOnDamage: '⛓️ 【{name}】 took damage and drew a card!',
+        poisonous: '☠️ Poisonous! 【{name}】 was destroyed instantly!',
+        secret_armor: '❓ Secret revealed! 【Ice Barrier】 triggered — gained 8 Armor!',
+        secret_aoe: '❓ Secret revealed! 【Explosive Trap】 detonated, dealing {dmg} damage to all enemies!',
+        secret_copy: '❓ Secret revealed! 【Mirror Entity】 summoned a copy of 【{name}】!',
+        minion_died: '💀 【{name}】 died.',
+        dr_draw: '💀 Deathrattle: 【{name}】 drew a card.',
+        dr_golem: '⚙️ Deathrattle: Summoned a 2/1 【Damaged Golem】.',
+        dr_slime: '🧪 Deathrattle: Summoned a 1/2 Taunt 【Sludge】.',
+        dr_sheep: '💣 【Explosive Sheep】 exploded! Dealt 2 damage to all minions!',
+        dr_boombot: '🧨 Boom Bot exploded, dealing {dmg} damage to {label}!',
+        discover_pick: '✨ You Discovered 【{name}】 and added it to your hand!',
+        secret_play: '❓ {who} played a mysterious 【Secret】!',
+        weapon_equip: '⚔️ {who} equipped 【{name}】 ({atk}/{dur}).',
+        summon: '📣 {who} summoned 【{name}】 ({atk}/{hp}).',
+        dr_boom_summon: '🤖 Dr. Boom summoned two 【Boom Bots】!',
+        battlecry_dmg: '🏹 【{name}】 Battlecry dealt {dmg} damage to {label}.',
+        battlecry_buff: '☀️ 【{name}】 gave {label} +1/+1.',
+        battlecry_silence: '🔇 【{name}】 Silenced {label}!',
+        coin: '🪙 {who} used 【Lucky Coin】 and gained 1 Mana Crystal this turn.',
+        glyph: '🔯 {who} cast 【{name}】 and opened Arcane Discover!',
+        army_buff: '🛡️ {who} cast 【{name}】 — all friendly minions gained +2/+2 and Divine Shield!',
+        siphon: '🩸 {who} cast 【Siphon Soul】, destroying {label} and restoring {heal} Health!',
+        draw_spell: '📘 {who} cast 【{name}】 and drew {n} cards.',
+        missiles: '☄️ {who} cast 【Arcane Missiles】, firing {n} missiles!',
+        polymorph: '🐑 {who} cast 【Polymorph】, turning 【{name}】 into a 1/1 Sheep!',
+        holy_nova: '🌟 {who} cast 【Holy Nova】, dealing {dmg} damage to all enemies and restoring 2 Health to friends!',
+        flamestrike: '🌋 {who} cast 【{name}】, dealing {dmg} damage to all enemy minions!',
+        base_dmg: '🔥 {who} cast 【{name}】 on {label}, dealing {dmg} damage{freeze}!',
+        hp_recruit: '🛡️ You used 【Reinforce】 and summoned a Silver Hand Recruit.',
+        hp_hunter: '🏹 You used 【Steady Shot】, dealing 2 damage to {boss}!',
+        hp_mage: '🔥 You used 【Fireblast】, dealing 1 damage to {label}.',
+        hero_atk_minion: '⚔️ {who} slashed {label}!',
+        hero_atk_hero: '⚔️ {who} struck the enemy hero for {dmg} damage!',
+        weapon_break: '🔨 Weapon 【{name}】 broke — its durability is spent.',
+        minion_vs_minion: '⚔️ 【{name}】 clashed with {label}!',
+        minion_atk: '⚔️ 【{name}】 attacked {label}, dealing {dmg} damage!',
+        lich_king_gift: '👑 【The Lich King】 granted a Death Knight card!',
+        rag_snipe: '☄️ “Let the flames cleanse all!” 【{name}】 blasted {label} for {dmg} damage!',
+        turn_player: '🌟 === Turn {n}: Your turn ({mana} Mana) ===',
+        turn_enemy: "🐉 === {boss}'s turn ({mana} Mana) ===",
+        boss_hunter: '🏹 {boss} used 【Shadow Arrow】, dealing 2 damage to your hero!',
+        boss_frost: "❄️ {boss} used 【Winter's Breath】, Freezing {label} and dealing 1 damage!",
+        boss_dragon: '🔥 {boss} used 【Molten Breath】, gaining {n} Armor and dealing {n} damage to {label}!',
+        game_start: '🍺 The duel begins! You are 【{hero}】, facing 【{boss}】!',
+        concede: 'You conceded the match.'
+      }
+    };
+    function logT(key, vars) {
+      let s = (LOG_T[currentLang] && LOG_T[currentLang][key] !== undefined) ? LOG_T[currentLang][key] : (LOG_T.zh[key] !== undefined ? LOG_T.zh[key] : key);
+      if (vars) for (const k in vars) s = s.split('{' + k + '}').join(String(vars[k]));
+      return s;
+    }
+    // 所有格（疲劳/爆牌两条日志用）：英文 Your / Boss's，中文 你 / BOSS名
+    function possName(side) {
+      if (side.isPlayer) return currentLang === 'en' ? 'Your' : '你';
+      const name = getEnemyBossName();
+      return currentLang === 'en' ? name + "'s" : name;
+    }
+
+    // 运行时换名：把卡牌/英雄/BOSS/宝藏的名称与描述切换到当前语言。
+    // 首次调用时先把中文原文备份到 _nameZh/_descZh 等字段，之后双向切换都从备份恢复。
+    function applyCardLanguage(lang) {
+      Object.values(CARD_DB).forEach(tpl => {
+        if (tpl._nameZh === undefined) { tpl._nameZh = tpl.name; tpl._descZh = tpl.desc; }
+        const en = CARD_EN[tpl.id];
+        if (lang === 'en' && en) { tpl.name = en.name; tpl.desc = en.desc; }
+        else { tpl.name = tpl._nameZh; tpl.desc = tpl._descZh; }
+      });
+      Object.keys(HERO_CLASSES).forEach(id => {
+        const cfg = HERO_CLASSES[id];
+        if (cfg._nameZh === undefined) { cfg._nameZh = cfg.name; cfg._titleZh = cfg.title; cfg._skillNameZh = cfg.skillName; cfg._skillDescZh = cfg.skillDesc; }
+        const en = HERO_EN[id];
+        if (lang === 'en' && en) { cfg.name = en.name; cfg.title = en.title; cfg.skillName = en.skillName; cfg.skillDesc = en.skillDesc; }
+        else { cfg.name = cfg._nameZh; cfg.title = cfg._titleZh; cfg.skillName = cfg._skillNameZh; cfg.skillDesc = cfg._skillDescZh; }
+      });
+      DUNGEON_BOSSES.forEach((boss, i) => {
+        if (boss._nameZh === undefined) { boss._nameZh = boss.name; boss._skillTitleZh = boss.skillTitle; }
+        const en = BOSS_EN[i];
+        if (lang === 'en' && en) { boss.name = en.name; boss.skillTitle = en.skillTitle; }
+        else { boss.name = boss._nameZh; boss.skillTitle = boss._skillTitleZh; }
+      });
+      PASSIVE_TREASURES.forEach(tr => {
+        if (tr._nameZh === undefined) { tr._nameZh = tr.name; tr._descZh = tr.desc; }
+        const en = TREASURE_EN[tr.id];
+        if (lang === 'en' && en) { tr.name = en.name; tr.desc = en.desc; }
+        else { tr.name = tr._nameZh; tr.desc = tr._descZh; }
+      });
+      // 已在场的随从实例名随语言同步（手牌读模板名，自动同步）
+      [Game.player, Game.enemy].forEach(side => {
+        if (!side) return;
+        side.board.forEach(m => { const tpl = CARD_DB[m.cardId]; if (tpl) m.name = tpl.name; });
+      });
+    }
+
+    // 静态文案（data-i18n）应用到当前语言；动态文案由 renderAll / checkGameOver 等用 t() 实时取。
+    function applyUILanguage() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+      });
+      document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const key = el.getAttribute('data-i18n-html');
+        el.innerHTML = t(key);
+      });
+      document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        el.title = t(key);
+      });
+      const langBtn = document.getElementById('btn-lang-toggle');
+      if (langBtn) {
+        langBtn.querySelector('span:last-child').textContent = t('lang_btn');
+        langBtn.title = t('lang_title');
+      }
+    }
+
+    function setLanguage(lang) {
+      currentLang = (lang === 'en') ? 'en' : 'zh';
+      try { localStorage.setItem('hs_tavern_lang', currentLang); } catch (e) {}
+      applyCardLanguage(currentLang);
+      applyUILanguage();
+      populateCodexModal();
+      renderAll();
+    }
+
     function getRecommendedCardIds(heroId) {
       if (heroId === 'mage') {
         return [
@@ -842,6 +1254,7 @@
       const charge = kw.includes('charge');
       const rush = kw.includes('rush');
       const windfury = kw.includes('windfury');
+      if (owner === 'player') Game.minionsSummoned += 1;
       return {
         uid: 'm_' + (uidSeed++),
         owner,
@@ -893,6 +1306,11 @@
       phase: 'mulligan', // 'mulligan' | 'player' | 'discover' | 'enemy' | 'gameover'
       turnNumber: 1,
       cardsPlayedCount: 0,
+      // 终局统计（F2）：对敌方英雄总伤害 / 受到的总伤害 / 召唤随从数 / 消灭敌方随从数
+      dmgDealtToEnemyHero: 0,
+      dmgTakenToHero: 0,
+      minionsSummoned: 0,
+      minionsDestroyed: 0,
       mulliganChoices: [],
       historyItems: [],
 
@@ -1024,14 +1442,14 @@
       });
     }
 
-    function showCardZoom(tpl, currentCost = null, sp = 0) {
+    function showCardZoom(tpl, currentCost = null, sp = 0, curAtk = null, curHp = null) {
       const box = document.getElementById('card-zoom-preview');
       if (!tpl || window.innerWidth < 768) {
         box.classList.add('hidden');
         return;
       }
       const costVal = currentCost !== null ? currentCost : tpl.cost;
-      const rarityName = tpl.rarity === 'legendary' ? '★ 传说卡牌' : tpl.rarity === 'epic' ? '◆ 史诗卡牌' : tpl.rarity === 'rare' ? '● 稀有卡牌' : '普通卡牌';
+      const rarityName = tpl.rarity === 'legendary' ? t('rarity_legendary') : tpl.rarity === 'epic' ? t('rarity_epic') : tpl.rarity === 'rare' ? t('rarity_rare') : t('rarity_common');
       box.innerHTML = `
         <div class="hs-card-frame rounded-2xl border-2 ${tpl.rarity === 'legendary' ? 'border-amber-400' : tpl.rarity === 'epic' ? 'border-purple-400' : tpl.rarity === 'rare' ? 'border-sky-400' : 'border-stone-400'} p-2.5 shadow-2xl">
           <div class="flex items-center justify-between mb-1">
@@ -1045,9 +1463,9 @@
           </div>
           ${tpl.type !== 'spell' ? `
             <div class="flex justify-between items-center mt-2 px-1">
-              <span class="px-2.5 py-0.5 rounded-full atk-sword-orb text-stone-950 font-black text-xs border border-amber-950">⚔️ ${tpl.atk}</span>
-              <span class="text-[11px] text-amber-200/80 font-bold">${tpl.type === 'minion' ? '随从' : '武器'}</span>
-              <span class="px-2.5 py-0.5 rounded-full ${tpl.type === 'minion' ? 'hp-blood-orb text-white border-red-950' : 'bg-stone-600 text-white border-stone-300'} font-black text-xs border">${tpl.type === 'minion' ? `❤️ ${tpl.hp}` : `🛡️ ${tpl.durability}`}</span>
+              <span class="px-2.5 py-0.5 rounded-full atk-sword-orb text-stone-950 font-black text-xs border border-amber-950">⚔️ ${curAtk !== null ? curAtk : tpl.atk}</span>
+              <span class="text-[11px] text-amber-200/80 font-bold">${tpl.type === 'minion' ? t('type_minion') : t('type_weapon')}</span>
+              <span class="px-2.5 py-0.5 rounded-full ${tpl.type === 'minion' ? 'hp-blood-orb text-white border-red-950' : 'bg-stone-600 text-white border-stone-300'} font-black text-xs border">${tpl.type === 'minion' ? `❤️ ${curHp !== null ? curHp : tpl.hp}` : `🛡️ ${tpl.durability}`}</span>
             </div>
           ` : ''}
         </div>
@@ -1155,12 +1573,12 @@
     // =========================================================================
     function drawCard(side, silent = false) {
       if (Game.phase === 'gameover') return;
-      const who = side.isPlayer ? '你' : getEnemyBossName();
+      const who = side.isPlayer ? t('you') : getEnemyBossName();
       const heroTargetId = side.isPlayer ? 'player-hero' : 'enemy-hero';
 
       if (side.deck.length === 0) {
         side.fatigue += 1;
-        addLog(`⚠️ ${who}牌库已空！受到 ${side.fatigue} 点疲劳伤害！`, 'event', '💀');
+        addLog(logT('fatigue', { who: possName(side), n: side.fatigue }), 'event', '💀');
         dealDamageToHero(side, side.fatigue);
         checkGameOver();
         return;
@@ -1169,7 +1587,7 @@
       const card = side.deck.shift();
       if (side.hand.length >= 10) {
         const tpl = CARD_DB[card.cardId];
-        addLog(`🔥 ${who}手牌已满，【${tpl.name}】被爆牌销毁！`, 'event', '🔥');
+        addLog(logT('mill', { who: possName(side), name: tpl.name }), 'event', '🔥');
         spawnFloatingText(heroTargetId, `爆牌: ${tpl.name}`, 'bg-amber-700 text-amber-100 border-amber-300');
         return;
       }
@@ -1191,6 +1609,12 @@
         rem -= absorbed;
       }
       side.hp -= rem;
+      side.hp = Math.max(0, side.hp);
+      // 终局统计：来源方对英雄造成的伤害（疲劳无 sourceSide，不计入）
+      if (sourceSide) {
+        if (!side.isPlayer && sourceSide.isPlayer) Game.dmgDealtToEnemyHero += amount;
+        else if (side.isPlayer && !sourceSide.isPlayer) Game.dmgTakenToHero += amount;
+      }
       spawnFloatingText(targetId, `-${amount}`, 'bg-red-600 text-white border-red-200');
       if (amount >= 5) triggerBoardShake();
 
@@ -1229,7 +1653,7 @@
         SoundFX.shieldBreak();
         FXEngine.spawnBurst(pos.x, pos.y, '#fde047', 20, 5.5);
         spawnFloatingText(minion.uid, '圣盾抵消', 'bg-yellow-500 text-stone-950 border-yellow-100');
-        addLog(`✨ 【${minion.name}】的圣盾抵消了伤害！`, 'info', '✨');
+        addLog(logT('divineShield', { name: minion.name }), 'info', '✨');
         return 0;
       }
 
@@ -1240,7 +1664,7 @@
       // 苦痛侍僧受伤抽牌
       if (!minion.silenced && minion.passive === 'drawOnDamage') {
         const ownerSide = minion.owner === 'player' ? Game.player : Game.enemy;
-        addLog(`⛓️ 【${minion.name}】受到伤害，触发抽一张牌！`, 'event', '📘');
+        addLog(logT('drawOnDamage', { name: minion.name }), 'event', '📘');
         drawCard(ownerSide);
       }
 
@@ -1248,7 +1672,7 @@
       if (opts.poisonous && minion.hp > 0) {
         minion.hp = 0;
         spawnFloatingText(minion.uid, '☠️ 剧毒必杀!', 'bg-lime-600 text-stone-950 border-lime-200');
-        addLog(`☠️ 剧毒生效，直接消灭【${minion.name}】！`, 'event', '☠️');
+        addLog(logT('poisonous', { name: minion.name }), 'event', '☠️');
       }
 
       // 吸血恢复英雄生命
@@ -1276,15 +1700,15 @@
           triggered.push(sec);
           const tid = defenderSide.isPlayer ? 'player-hero' : 'enemy-hero';
           spawnFloatingText(tid, '❓寒冰护体 +8甲!', 'bg-sky-500 text-stone-950 border-white');
-          addLog(`❓ 奥秘揭晓！【寒冰护体】触发，立即获得 8 点护甲！`, 'event', '🧊');
+          addLog(logT('secret_armor'), 'event', '🧊');
         } else if (sec.secretType === 'onHeroAttackedAoe2') {
           defenderSide.secrets.splice(i, 1);
           triggered.push(sec);
           const dmg = 2 + getSpellPower(defenderSide);
           triggerBoardShake();
-          showSpeechToast('❓ 奥秘触发：爆炸陷阱！');
-          addLog(`❓ 奥秘揭晓！【爆炸陷阱】引爆，对所有敌人造成 ${dmg} 点伤害！`, 'event', '🧨');
-          dealDamageToHero(attackerSide, dmg);
+          showSpeechToast(t('toast_explosive'));
+          addLog(logT('secret_aoe', { dmg }), 'event', '🧨');
+          dealDamageToHero(attackerSide, dmg, defenderSide);
           [...attackerSide.board].forEach(m => dealDamageToMinion(m, dmg));
           resolveDeaths();
         }
@@ -1303,8 +1727,8 @@
       copy.hp = summonedMinion.hp;
       copy.maxHp = summonedMinion.maxHp;
       oppSide.board.push(copy);
-      showSpeechToast(`❓ 奥秘触发：镜像实体复制了【${summonedMinion.name}】！`);
-      addLog(`❓ 奥秘揭晓！【镜像实体】召唤了【${summonedMinion.name}】的镜像复制！`, 'event', '🪞');
+      showSpeechToast(t('toast_mirror', { name: summonedMinion.name }));
+      addLog(logT('secret_copy', { name: summonedMinion.name }), 'event', '🪞');
     }
 
     function resolveDeaths() {
@@ -1315,10 +1739,12 @@
 
         Game.player.board = Game.player.board.filter(m => m.hp > 0);
         Game.enemy.board = Game.enemy.board.filter(m => m.hp > 0);
+        // 终局统计：“消灭随从”仅计敌方随从阵亡数
+        Game.minionsDestroyed += deadEnemy.length;
 
         const allDead = [...deadPlayer, ...deadEnemy];
         for (const m of allDead) {
-          addLog(`💀 【${m.name}】阵亡。`, 'info', '💀');
+          addLog(logT('minion_died', { name: m.name }), 'info', '💀');
           if (!m.silenced && m.deathrattle) {
             triggerDeathrattle(m);
           }
@@ -1332,22 +1758,22 @@
       const oppSide = minion.owner === 'player' ? Game.enemy : Game.player;
 
       if (minion.deathrattle === 'draw1') {
-        addLog(`💀 亡语触发：【${minion.name}】抽一张牌。`, 'event', '💰');
+        addLog(logT('dr_draw', { name: minion.name }), 'event', '💰');
         drawCard(ownerSide);
       } else if (minion.deathrattle === 'summonDamagedGolem') {
         if (ownerSide.board.length < 7) {
           ownerSide.board.push(createMinionInstance('damaged_golem', minion.owner));
-          addLog(`⚙️ 亡语触发：召唤了 2/1 的【损坏的傀儡】。`, 'event', '⚙️');
+          addLog(logT('dr_golem'), 'event', '⚙️');
         }
       } else if (minion.deathrattle === 'summonSlime') {
         if (ownerSide.board.length < 7) {
           ownerSide.board.push(createMinionInstance('slime_taunt', minion.owner));
-          addLog(`🧪 亡语触发：召唤了 1/2 嘲讽【剧毒泥浆怪】。`, 'event', '🧪');
+          addLog(logT('dr_slime'), 'event', '🧪');
         }
       } else if (minion.deathrattle === 'aoeAllMinions2') {
         SoundFX.spellFire();
         triggerBoardShake();
-        addLog(`💣 【自爆绵羊】爆炸！对全场所有随从造成 2 点伤害！`, 'event', '💣');
+        addLog(logT('dr_sheep'), 'event', '💣');
         [...Game.player.board, ...Game.enemy.board].forEach(other => {
           dealDamageToMinion(other, 2);
         });
@@ -1359,9 +1785,9 @@
         ];
         const pick = candidates[Math.floor(Math.random() * candidates.length)];
         SoundFX.spellFire();
-        applyDamageByDescriptor(pick, dmg);
+        applyDamageByDescriptor(pick, dmg, { sourceSide: ownerSide });
         const targetLabel = pick.kind === 'minion' ? `【${pick.minion.name}】` : (oppSide.isPlayer ? '你的英雄' : getEnemyBossName());
-        addLog(`🧨 砰砰机器人爆炸，对${targetLabel}造成 ${dmg} 点伤害！`, 'event', '🧨');
+        addLog(logT('dr_boombot', { label: targetLabel, dmg }), 'event', '🧨');
       }
     }
 
@@ -1411,9 +1837,9 @@
       const shuffled = [...candidates].sort(() => Math.random() - 0.5).slice(0, 3);
 
       const modal = document.getElementById('discover-modal');
-      document.getElementById('discover-badge').textContent = '✨ 奥术发现 (Discover)';
-      document.getElementById('discover-title').textContent = costDiscount > 0 ? `挑选一张法术（法力消耗 -${costDiscount}）` : '挑选一张卡牌置入你的手牌';
-      document.getElementById('discover-subtitle').textContent = '根据当前战局选择最理想的一张支援手牌';
+      document.getElementById('discover-badge').textContent = t('discover_badge');
+      document.getElementById('discover-title').textContent = costDiscount > 0 ? t('discover_title_spell', { n: costDiscount }) : t('discover_title_any');
+      document.getElementById('discover-subtitle').textContent = t('discover_subtitle');
 
       const grid = document.getElementById('discover-options');
       grid.innerHTML = '';
@@ -1443,9 +1869,9 @@
           SoundFX.cardDraw();
           if (Game.player.hand.length < 10) {
             Game.player.hand.push(createCardInstance(tpl.id, finalCost));
-            addLog(`✨ 你通过【发现】选择了【${tpl.name}】置入手牌！`, 'player', '✨');
+            addLog(logT('discover_pick', { name: tpl.name }), 'player', '✨');
           } else {
-            showSpeechToast('手牌已满 10 张，无法置入更多卡牌！');
+            showSpeechToast(t('toast_hand_full'));
           }
           modal.classList.add('hidden');
           Game.phase = prevPhase === 'discover' ? 'player' : prevPhase;
@@ -1465,9 +1891,9 @@
       const choices = [...available].sort(() => Math.random() - 0.5).slice(0, 3);
 
       const modal = document.getElementById('discover-modal');
-      document.getElementById('discover-badge').textContent = `🏰 地下城第 ${Game.dungeonStage} 层突破！`;
-      document.getElementById('discover-title').textContent = '选择一件远古被动宝藏';
-      document.getElementById('discover-subtitle').textContent = `永久强化本轮地下城征程，下一战对手：【${DUNGEON_BOSSES[Game.dungeonStage].name}】`;
+      document.getElementById('discover-badge').textContent = t('treasure_badge', { n: Game.dungeonStage });
+      document.getElementById('discover-title').textContent = t('treasure_title');
+      document.getElementById('discover-subtitle').textContent = t('treasure_subtitle', { boss: DUNGEON_BOSSES[Game.dungeonStage].name });
 
       const grid = document.getElementById('discover-options');
       grid.innerHTML = '';
@@ -1525,29 +1951,33 @@
         savePersistentData();
         SoundFX.victory();
         icon.textContent = '🏆';
-        title.textContent = Game.difficulty === 'dungeon' ? '制霸地下城！' : '璀璨胜利！';
+        title.textContent = Game.difficulty === 'dungeon' ? t('victory_dungeon') : t('victory');
         title.className = 'font-fantasy text-2xl sm:text-3xl font-black text-amber-300 mb-2';
         desc.textContent = Game.difficulty === 'dungeon'
-          ? '不可思议！你连克三大地下城首领，夺得了酒馆最高传奇荣耀！'
-          : `精彩绝伦的博弈！你击败了${getEnemyBossName()}，酒馆全员为你欢呼干杯！`;
+          ? t('victory_desc_dungeon')
+          : t('victory_desc', { boss: getEnemyBossName() });
       } else if (pDead && eDead) {
         SoundFX.defeat();
         icon.textContent = '⚖️';
-        title.textContent = '同归于尽！';
+        title.textContent = t('draw');
         title.className = 'font-fantasy text-2xl sm:text-3xl font-black text-sky-300 mb-2';
-        desc.textContent = '双方英雄在烈焰中同时倒下，这是一场载入酒馆史册的平局！';
+        desc.textContent = t('draw_desc');
       } else {
         SoundFX.defeat();
         icon.textContent = '💀';
-        title.textContent = '惜败退场';
+        title.textContent = t('defeat');
         title.className = 'font-fantasy text-2xl sm:text-3xl font-black text-red-400 mb-2';
-        desc.textContent = `${getEnemyBossName()}略胜一筹，前往【组牌工坊】微调法力曲线再战一局吧！`;
+        desc.textContent = t('defeat_desc', { boss: getEnemyBossName() });
       }
 
       document.getElementById('stat-turns').textContent = String(Game.turnNumber);
       document.getElementById('stat-cards').textContent = String(Game.cardsPlayedCount);
       document.getElementById('stat-wins').textContent = String(Game.wins);
-      document.getElementById('score-badge').textContent = `胜场: ${Game.wins}`;
+      document.getElementById('stat-dmg-dealt').textContent = String(Game.dmgDealtToEnemyHero);
+      document.getElementById('stat-dmg-taken').textContent = String(Game.dmgTakenToHero);
+      document.getElementById('stat-summoned').textContent = String(Game.minionsSummoned);
+      document.getElementById('stat-destroyed').textContent = String(Game.minionsDestroyed);
+      document.getElementById('score-badge').textContent = `${t('score_wins')}: ${Game.wins}`;
       modal.classList.remove('hidden');
       return true;
     }
@@ -1597,7 +2027,7 @@
     }
 
     function findTargetDescriptorById(targetId) {
-      if (targetId === 'player-hero') return { kind: 'player-hero', side: Game.player, id: 'player-hero', label: '你的英雄' };
+      if (targetId === 'player-hero') return { kind: 'player-hero', side: Game.player, id: 'player-hero', label: t('your_hero') };
       if (targetId === 'enemy-hero') return { kind: 'enemy-hero', side: Game.enemy, id: 'enemy-hero', label: getEnemyBossName() };
       const pm = Game.player.board.find(m => m.uid === targetId);
       if (pm) return { kind: 'minion', minion: pm, side: Game.player, id: pm.uid, label: `【${pm.name}】` };
@@ -1667,19 +2097,19 @@
 
       if (card.cost > p.mana) {
         SoundFX.errorWarn();
-        showSpeechToast('我没有足够的法力值！');
+        showSpeechToast(t('toast_no_mana'));
         renderAll();
         return;
       }
       if (tpl.type === 'minion' && p.board.length >= 7) {
         SoundFX.errorWarn();
-        showSpeechToast('战场上随从已经满了（最多 7 个）！');
+        showSpeechToast(t('toast_board_full'));
         renderAll();
         return;
       }
       if (tpl.secretType && (p.secrets.length >= 3 || p.secrets.some(s => s.cardId === tpl.id))) {
         SoundFX.errorWarn();
-        showSpeechToast('同名奥秘已挂载或奥秘栏已满！');
+        showSpeechToast(t('toast_secret_mounted'));
         renderAll();
         return;
       }
@@ -1687,7 +2117,7 @@
       const validTargets = getValidTargetsForCard(tpl, p, Game.enemy);
       if (tpl.type === 'spell' && tpl.targetType && validTargets.length === 0) {
         SoundFX.errorWarn();
-        showSpeechToast('场上没有有效的法术目标！');
+        showSpeechToast(t('toast_no_spell_target'));
         renderAll();
         return;
       }
@@ -1700,7 +2130,7 @@
           validTargets
         };
         const banner = document.getElementById('targeting-banner');
-        document.getElementById('targeting-text').textContent = `正在使用【${tpl.name}】：请点击高亮目标`;
+        document.getElementById('targeting-text').textContent = t('target_spell', { name: tpl.name });
         banner.classList.remove('hidden');
       } else {
         document.getElementById('play-drop-hint').classList.remove('hidden');
@@ -1718,7 +2148,7 @@
       side.mana -= card.cost;
       side.hand.splice(idx, 1);
       if (side.isPlayer) Game.cardsPlayedCount += 1;
-      const who = side.isPlayer ? '你' : getEnemyBossName();
+      const who = side.isPlayer ? t('you') : getEnemyBossName();
       const tone = side.isPlayer ? 'player' : 'enemy';
       const sp = getSpellPower(side);
 
@@ -1744,7 +2174,7 @@
           name: tpl.name,
           color: tpl.secretColor || 'bg-pink-500 border-pink-200'
         });
-        addLog(`❓ ${who}挂上了一道神秘的【奥秘】！`, tone, '❓');
+        addLog(logT('secret_play', { who }), tone, '❓');
         renderAll();
         return;
       }
@@ -1760,7 +2190,7 @@
           healOnAtk: tpl.healOnAtk || 0,
           windfury: Boolean(tpl.windfury)
         };
-        addLog(`⚔️ ${who}装备了武器【${tpl.name}】(${tpl.atk}/${tpl.durability})。`, tone, tpl.icon || '⚔️');
+        addLog(logT('weapon_equip', { who, name: tpl.name, atk: tpl.atk, dur: tpl.durability }), tone, tpl.icon || '⚔️');
         renderAll();
         return;
       }
@@ -1770,7 +2200,7 @@
         SoundFX.summon(tpl.rarity === 'legendary');
         const minion = createMinionInstance(tpl.id, side.isPlayer ? 'player' : 'enemy');
         side.board.push(minion);
-        addLog(`📣 ${who}召唤了【${tpl.name}】(${minion.atk}/${minion.hp})。`, tone, '🛡️');
+        addLog(logT('summon', { who, name: tpl.name, atk: minion.atk, hp: minion.hp }), tone, '🛡️');
         renderAll();
 
         const spawnPos = getEntityCenter(minion.uid);
@@ -1787,15 +2217,15 @@
               side.board.push(createMinionInstance('boom_bot', side.isPlayer ? 'player' : 'enemy'));
             }
           }
-          addLog(`🤖 砰砰博士召唤了两个【砰砰机器人】！`, 'event', '🤖');
+          addLog(logT('dr_boom_summon'), 'event', '🤖');
         }
         if (targetId) {
           const desc = findTargetDescriptorById(targetId);
           if (desc) {
             if (tpl.battlecryDmg) {
               SoundFX.attackHit(false);
-              applyDamageByDescriptor(desc, tpl.battlecryDmg);
-              addLog(`🏹 【${tpl.name}】战吼对${desc.label}造成 ${tpl.battlecryDmg} 点伤害。`, 'event', '🏹');
+              applyDamageByDescriptor(desc, tpl.battlecryDmg, { sourceSide: side });
+              addLog(logT('battlecry_dmg', { name: tpl.name, label: desc.label, dmg: tpl.battlecryDmg }), 'event', '🏹');
             }
             if (tpl.battlecryBuff && desc.kind === 'minion') {
               desc.minion.atk += tpl.battlecryBuff[0];
@@ -1803,11 +2233,11 @@
               desc.minion.maxHp += tpl.battlecryBuff[1];
               SoundFX.heal();
               spawnFloatingText(desc.id, `+${tpl.battlecryBuff[0]}/+${tpl.battlecryBuff[1]}`, 'bg-amber-500 text-stone-950 border-amber-100');
-              addLog(`☀️ 【${tpl.name}】使${desc.label}获得 +1/+1。`, 'event', '☀️');
+              addLog(logT('battlecry_buff', { name: tpl.name, label: desc.label }), 'event', '☀️');
             }
             if (tpl.battlecrySilence && desc.kind === 'minion') {
               silenceMinion(desc.minion);
-              addLog(`🔇 【${tpl.name}】沉默了${desc.label}！`, 'event', '🔇');
+              addLog(logT('battlecry_silence', { name: tpl.name, label: desc.label }), 'event', '🔇');
             }
           }
         }
@@ -1835,13 +2265,13 @@
       if (tpl.id === 'coin') {
         SoundFX.manaGem();
         side.mana = Math.min(10, side.mana + 1);
-        addLog(`🪙 ${who}使用【幸运币】，本回合获得 1 颗法力水晶。`, tone, '🪙');
+        addLog(logT('coin', { who }), tone, '🪙');
         renderAll();
         return;
       }
 
       if (tpl.discoverPool) {
-        addLog(`🔯 ${who}施放【${tpl.name}】，开启奥术发现！`, tone, '🔯');
+        addLog(logT('glyph', { who, name: tpl.name }), tone, '🔯');
         if (side.isPlayer) {
           openDiscoverCardModal(tpl.discoverPool, tpl.discoverDiscount || 0);
         } else if (side.hand.length < 10) {
@@ -1862,7 +2292,7 @@
           m.divineShield = true;
           spawnFloatingText(m.uid, '+2/+2 圣盾', 'bg-cyan-500 text-stone-950 border-white');
         });
-        addLog(`🛡️ ${who}施放【${tpl.name}】，全体友方随从获得 +2/+2 与圣盾！`, tone, '🛡️');
+        addLog(logT('army_buff', { who, name: tpl.name }), tone, '🛡️');
         renderAll();
         return;
       }
@@ -1874,7 +2304,7 @@
           desc.minion.hp = 0;
           spawnFloatingText(desc.id, '🩸 虹吸消灭!', 'bg-purple-700 text-white border-purple-200');
           healTarget(null, true, side, tpl.destroyMinionHeal);
-          addLog(`🩸 ${who}施放【暗影虹吸】消灭了${desc.label}，并恢复 ${tpl.destroyMinionHeal} 点生命！`, tone, '🩸');
+          addLog(logT('siphon', { who, label: desc.label, heal: tpl.destroyMinionHeal }), tone, '🩸');
           resolveDeaths();
         }
         renderAll();
@@ -1883,7 +2313,7 @@
 
       if (tpl.drawCards && !tpl.baseDmg) {
         SoundFX.manaGem();
-        addLog(`📘 ${who}施放【${tpl.name}】，抽 ${tpl.drawCards} 张牌。`, tone, '📘');
+        addLog(logT('draw_spell', { who, name: tpl.name, n: tpl.drawCards }), tone, '📘');
         for (let i = 0; i < tpl.drawCards; i++) drawCard(side);
         renderAll();
         return;
@@ -1891,7 +2321,7 @@
 
       if (tpl.isMissile) {
         const totalMissiles = tpl.baseDmg + sp;
-        addLog(`☄️ ${who}施放【奥术飞弹】，发射 ${totalMissiles} 枚飞弹！`, tone, '☄️');
+        addLog(logT('missiles', { who, n: totalMissiles }), tone, '☄️');
         const fromPos = getEntityCenter(side.isPlayer ? 'player-hero' : 'enemy-hero');
         for (let m = 0; m < totalMissiles; m++) {
           setTimeout(() => {
@@ -1904,7 +2334,7 @@
             const toPos = getEntityCenter(pick.id);
             SoundFX.spellFire();
             FXEngine.shootProjectile(fromPos.x, fromPos.y, toPos.x, toPos.y, '#c084fc', 220, () => {
-              applyDamageByDescriptor(pick, 1);
+              applyDamageByDescriptor(pick, 1, { sourceSide: side });
               resolveDeaths();
               renderAll();
             });
@@ -1926,7 +2356,7 @@
             b[mIdx] = sheep;
             renderAll();
             spawnFloatingText(sheep.uid, '咩～ 1/1', 'bg-pink-600 text-white border-pink-200');
-            addLog(`🐑 ${who}施放【变形术】，将【${oldName}】变成了 1/1 的绵羊！`, tone, '🐑');
+            addLog(logT('polymorph', { who, name: oldName }), tone, '🐑');
             return;
           }
         }
@@ -1938,8 +2368,8 @@
         const dmg = tpl.baseDmg + sp;
         SoundFX.heal();
         triggerBoardShake();
-        addLog(`🌟 ${who}施放【神圣新星】，对所有敌人造成 ${dmg} 点伤害并为友方恢复 2 点生命！`, tone, '🌟');
-        dealDamageToHero(oppSide, dmg);
+        addLog(logT('holy_nova', { who, dmg }), tone, '🌟');
+        dealDamageToHero(oppSide, dmg, side);
         [...oppSide.board].forEach(m => dealDamageToMinion(m, dmg));
         healTarget(null, true, side, 2);
         side.board.forEach(m => healTarget(m, false, side, 2));
@@ -1952,7 +2382,7 @@
         const dmg = tpl.baseDmg + sp;
         SoundFX.spellFire();
         triggerBoardShake();
-        addLog(`🌋 ${who}施放【${tpl.name}】，对所有敌方随从造成 ${dmg} 点伤害！`, tone, '🌋');
+        addLog(logT('flamestrike', { who, name: tpl.name, dmg }), tone, '🌋');
         [...oppSide.board].forEach(m => dealDamageToMinion(m, dmg));
         resolveDeaths();
         renderAll();
@@ -1969,9 +2399,9 @@
           if (tpl.freezeTarget) SoundFX.spellFrost();
           else SoundFX.spellFire();
 
-          addLog(`🔥 ${who}对${desc.label}施放【${tpl.name}】，造成 ${dmg} 点伤害${tpl.freezeTarget ? '并冻结' : ''}！`, tone, '🔥');
+          addLog(logT('base_dmg', { who, label: desc.label, name: tpl.name, dmg, freeze: tpl.freezeTarget ? t('freeze_suffix') : '' }), tone, '🔥');
           FXEngine.shootProjectile(fromPos.x, fromPos.y, toPos.x, toPos.y, color, 250, () => {
-            applyDamageByDescriptor(desc, dmg);
+            applyDamageByDescriptor(desc, dmg, { sourceSide: side });
             if (tpl.freezeTarget) {
               if (desc.kind === 'minion') desc.minion.frozen = true;
               else desc.side.frozen = true;
@@ -1996,17 +2426,17 @@
 
       if (p.heroPowerUsesThisTurn >= maxUses) {
         SoundFX.errorWarn();
-        showSpeechToast('本回合英雄技能使用次数已用尽！');
+        showSpeechToast(t('toast_hp_used'));
         return;
       }
       if (p.mana < cost) {
         SoundFX.errorWarn();
-        showSpeechToast('法力值不足，无法使用英雄技能！');
+        showSpeechToast(t('toast_hp_mana'));
         return;
       }
       if (cfg.id === 'paladin' && p.board.length >= 7) {
         SoundFX.errorWarn();
-        showSpeechToast('战场随从已满，无法召唤新兵！');
+        showSpeechToast(t('toast_recruit_full'));
         return;
       }
 
@@ -2015,7 +2445,7 @@
       if (cfg.skillNeedsTarget) {
         const validTargets = ['enemy-hero', 'player-hero', ...Game.enemy.board.map(m => m.uid), ...p.board.map(m => m.uid)];
         Game.pendingAction = { kind: 'heropower', validTargets };
-        document.getElementById('targeting-text').textContent = `英雄技能【${cfg.skillName}】：请选择目标`;
+        document.getElementById('targeting-text').textContent = t('target_hero_power', { name: cfg.skillName });
         document.getElementById('targeting-banner').classList.remove('hidden');
         renderAll();
         return;
@@ -2026,14 +2456,14 @@
       if (cfg.id === 'paladin') {
         SoundFX.summon(false);
         p.board.push(createMinionInstance('silver_recruit', 'player'));
-        addLog(`🛡️ 你使用【白银援军】，召唤了白银新兵。`, 'player', '🛡️');
+        addLog(logT('hp_recruit'), 'player', '🛡️');
       } else if (cfg.id === 'hunter') {
         const fromPos = getEntityCenter('player-hero');
         const toPos = getEntityCenter('enemy-hero');
         SoundFX.spellFire();
-        addLog(`🏹 你使用【稳固射击】，对${getEnemyBossName()}造成 2 点伤害！`, 'player', '🏹');
+        addLog(logT('hp_hunter', { boss: getEnemyBossName() }), 'player', '🏹');
         FXEngine.shootProjectile(fromPos.x, fromPos.y, toPos.x, toPos.y, '#22c55e', 240, () => {
-          dealDamageToHero(Game.enemy, 2);
+          dealDamageToHero(Game.enemy, 2, Game.player);
           checkGameOver();
           renderAll();
         });
@@ -2055,9 +2485,9 @@
       const fromPos = getEntityCenter('player-hero');
       const toPos = getEntityCenter(desc.id);
       SoundFX.spellFire();
-      addLog(`🔥 你使用【火焰冲击】，对${desc.label}造成 1 点伤害。`, 'player', '🔥');
+      addLog(logT('hp_mage', { label: desc.label }), 'player', '🔥');
       FXEngine.shootProjectile(fromPos.x, fromPos.y, toPos.x, toPos.y, '#fb923c', 230, () => {
-        applyDamageByDescriptor(desc, 1);
+        applyDamageByDescriptor(desc, 1, { sourceSide: Game.player });
         resolveDeaths();
         renderAll();
       });
@@ -2071,8 +2501,8 @@
 
       if (attackerId === 'player-hero') {
         if (!canHeroAttack(p)) {
-          if (p.frozen) showSpeechToast('角色已被冻结，本回合无法攻击！');
-          else showSpeechToast('你的英雄本回合攻击次数已用尽！');
+          if (p.frozen) showSpeechToast(t('toast_hero_frozen'));
+          else showSpeechToast(t('toast_hero_exhausted'));
           return;
         }
       } else {
@@ -2080,12 +2510,12 @@
         if (!atkMinion) return;
         if (!canMinionAttack(atkMinion, Game.enemy)) {
           SoundFX.errorWarn();
-          if (atkMinion.cantAttack) showSpeechToast('该随从无法主动发起攻击！');
-          else if (atkMinion.frozen) showSpeechToast('随从已被冻结，无法攻击！');
+          if (atkMinion.cantAttack) showSpeechToast(t('toast_cant_attack'));
+          else if (atkMinion.frozen) showSpeechToast(t('toast_minion_frozen'));
           else if (atkMinion.summonedThisTurn && atkMinion.rush && Game.enemy.board.length === 0) {
-            showSpeechToast('具有【突袭】的随从登场首回合只能攻击敌方随从！');
-          } else if (atkMinion.exhausted) showSpeechToast('随从刚登场需要准备一回合（突袭/冲锋除外）！');
-          else showSpeechToast('该随从本回合攻击次数已用尽！');
+            showSpeechToast(t('toast_rush_minion_only'));
+          } else if (atkMinion.exhausted) showSpeechToast(t('toast_summoning_sick'));
+          else showSpeechToast(t('toast_minion_exhausted'));
           return;
         }
       }
@@ -2098,8 +2528,8 @@
         validTargets
       };
       document.getElementById('targeting-text').textContent = atkMinion && atkMinion.summonedThisTurn && atkMinion.rush && !atkMinion.charge
-        ? '【突袭】激活：请选择要攻击的敌方随从'
-        : '请选择要攻击的敌方目标';
+        ? t('target_rush')
+        : t('target_attack');
       document.getElementById('targeting-banner').classList.remove('hidden');
       renderAll();
     }
@@ -2113,9 +2543,9 @@
         if (attackerSide.isPlayer) {
           SoundFX.errorWarn();
           if (atkMinion && atkMinion.summonedThisTurn && atkMinion.rush && !atkMinion.charge && targetId === 'enemy-hero') {
-            showSpeechToast('【突袭】随从登场当回合不能攻击敌方英雄！');
+            showSpeechToast(t('toast_rush_no_hero'));
           } else {
-            showSpeechToast('你必须先攻击具有嘲讽的随从！');
+            showSpeechToast(t('toast_taunt_first'));
           }
         }
         if (onComplete) onComplete();
@@ -2164,18 +2594,18 @@
           const who = attackerSide.isPlayer ? '你的英雄' : getEnemyBossName();
           if (targetDesc.kind === 'minion') {
             const defM = targetDesc.minion;
-            addLog(`⚔️ ${who}劈砍${targetDesc.label}！`, tone, '⚔️');
+            addLog(logT('hero_atk_minion', { who, label: targetDesc.label }), tone, '⚔️');
             dealDamageToMinion(defM, totalAtk);
-            if (defM.atk > 0) dealDamageToHero(attackerSide, defM.atk);
+            if (defM.atk > 0) dealDamageToHero(attackerSide, defM.atk, defenderSide);
           } else {
-            addLog(`⚔️ ${who}直击敌方英雄，造成 ${totalAtk} 点伤害！`, tone, '⚔️');
-            dealDamageToHero(defenderSide, totalAtk);
+            addLog(logT('hero_atk_hero', { who, dmg: totalAtk }), tone, '⚔️');
+            dealDamageToHero(defenderSide, totalAtk, attackerSide);
           }
 
           if (attackerSide.weapon) {
             attackerSide.weapon.durability -= 1;
             if (attackerSide.weapon.durability <= 0) {
-              addLog(`🔨 武器【${attackerSide.weapon.name}】耐久耗尽碎裂。`, 'info', '🔨');
+              addLog(logT('weapon_break', { name: attackerSide.weapon.name }), 'info', '🔨');
               attackerSide.weapon = null;
             }
           }
@@ -2185,7 +2615,7 @@
 
           if (targetDesc.kind === 'minion') {
             const defM = targetDesc.minion;
-            addLog(`⚔️ 【${atkMinion.name}】与${targetDesc.label}激烈交锋！`, tone, '⚔️');
+            addLog(logT('minion_vs_minion', { name: atkMinion.name, label: targetDesc.label }), tone, '⚔️');
             const dmgToDef = atkMinion.atk;
             const dmgToAtk = defM.atk;
             dealDamageToMinion(defM, dmgToDef, {
@@ -2201,7 +2631,7 @@
               });
             }
           } else {
-            addLog(`⚔️ 【${atkMinion.name}】攻击${targetDesc.label}，造成 ${atkMinion.atk} 点伤害！`, tone, '⚔️');
+            addLog(logT('minion_atk', { name: atkMinion.name, label: targetDesc.label, dmg: atkMinion.atk }), tone, '⚔️');
             dealDamageToHero(
               defenderSide,
               atkMinion.atk,
@@ -2238,9 +2668,9 @@
           const srcM = Game.player.board.find(x => x.uid === act.sourceUid);
           SoundFX.errorWarn();
           if (srcM && srcM.summonedThisTurn && srcM.rush && !srcM.charge && entityId === 'enemy-hero') {
-            showSpeechToast('【突袭】随从登场当回合不能攻击敌方英雄！');
+            showSpeechToast(t('toast_rush_no_hero'));
           } else {
-            showSpeechToast('你必须先攻击具有嘲讽的随从！');
+            showSpeechToast(t('toast_taunt_first'));
           }
           return;
         }
@@ -2277,7 +2707,7 @@
           SoundFX.spellFrost();
           const tid = activeSide.isPlayer ? 'player-hero' : 'enemy-hero';
           spawnFloatingText(tid, `👑 获得【${CARD_DB[pickId].name}】`, 'bg-cyan-600 text-white border-cyan-100');
-          addLog(`👑 【巫妖王阿尔萨斯】赐予了一张死亡骑士神卡！`, 'event', '👑');
+          addLog(logT('lich_king_gift'), 'event', '👑');
         }
       });
 
@@ -2296,17 +2726,17 @@
         }
         const rag = snipers[idx++];
         const pool = [
-          { kind: oppSide.isPlayer ? 'player-hero' : 'enemy-hero', id: oppSide.isPlayer ? 'player-hero' : 'enemy-hero', label: oppSide.isPlayer ? '你的英雄' : getEnemyBossName() },
+          { kind: oppSide.isPlayer ? 'player-hero' : 'enemy-hero', id: oppSide.isPlayer ? 'player-hero' : 'enemy-hero', label: oppSide.isPlayer ? t('your_hero') : getEnemyBossName() },
           ...oppSide.board.filter(m => m.hp > 0).map(m => ({ kind: 'minion', minion: m, id: m.uid, label: `【${m.name}】` }))
         ];
         const pick = pool[Math.floor(Math.random() * pool.length)];
         const fromPos = getEntityCenter(rag.uid);
         const toPos = getEntityCenter(pick.id);
         SoundFX.spellFire();
-        addLog(`☄️ “让火焰净化一切！”【${rag.name}】轰击${pick.label}造成 ${rag.endTurnSnipe} 点伤害！`, 'event', '☄️');
+        addLog(logT('rag_snipe', { name: rag.name, label: pick.label, dmg: rag.endTurnSnipe }), 'event', '☄️');
         FXEngine.shootProjectile(fromPos.x, fromPos.y, toPos.x, toPos.y, '#ef4444', 330, () => {
           triggerBoardShake();
-          applyDamageByDescriptor(pick, rag.endTurnSnipe);
+          applyDamageByDescriptor(pick, rag.endTurnSnipe, { sourceSide: activeSide });
           resolveDeaths();
           renderAll();
           setTimeout(nextSnipe, 300);
@@ -2347,8 +2777,8 @@
       }
 
       drawCard(Game.player);
-      addLog(`🌟 === 第 ${Game.turnNumber} 回合：你的回合 (${Game.player.mana} 法力) ===`, 'player', '🌟');
-      showSpeechToast(`第 ${Game.turnNumber} 回合 · 你的回合`);
+      addLog(logT('turn_player', { n: Game.turnNumber, mana: Game.player.mana }), 'player', '🌟');
+      showSpeechToast(t('toast_turn', { n: Game.turnNumber }));
       renderAll();
     }
 
@@ -2373,7 +2803,7 @@
       const bossName = getEnemyBossName();
       refreshSideForNewTurn(ai);
       drawCard(ai);
-      addLog(`🐉 === ${bossName}的回合 (${ai.mana} 法力) ===`, 'enemy', '🐉');
+      addLog(logT('turn_enemy', { boss: bossName, mana: ai.mana }), 'enemy', '🐉');
       renderAll();
       if (checkGameOver()) return;
 
@@ -2442,9 +2872,9 @@
             const fromPos = getEntityCenter('enemy-hero');
             const toPos = getEntityCenter('player-hero');
             SoundFX.spellFire();
-            addLog(`🏹 ${bossName}使用【暗影冷箭】，对你的英雄造成 2 点伤害！`, 'enemy', '🏹');
+            addLog(logT('boss_hunter', { boss: bossName }), 'enemy', '🏹');
             FXEngine.shootProjectile(fromPos.x, fromPos.y, toPos.x, toPos.y, '#10b981', 240, () => {
-              dealDamageToHero(pl, 2);
+              dealDamageToHero(pl, 2, ai);
               if (!checkGameOver()) {
                 renderAll();
                 setTimeout(aiStep, stepDelay);
@@ -2457,15 +2887,15 @@
           if (bossMode === 'frost') {
             const pool = [
               ...pl.board.filter(m => m.hp > 0).map(m => ({ kind: 'minion', minion: m, id: m.uid, label: `【${m.name}】` })),
-              { kind: 'player-hero', id: 'player-hero', label: '你的英雄' }
+              { kind: 'player-hero', id: 'player-hero', label: t('your_hero') }
             ];
             const pick = pool[0];
             const fromPos = getEntityCenter('enemy-hero');
             const toPos = getEntityCenter(pick.id);
             SoundFX.spellFrost();
-            addLog(`❄️ ${bossName}使用【凛冬吐息】，冻结${pick.label}并造成 1 点伤害！`, 'enemy', '❄️');
+            addLog(logT('boss_frost', { boss: bossName, label: pick.label }), 'enemy', '❄️');
             FXEngine.shootProjectile(fromPos.x, fromPos.y, toPos.x, toPos.y, '#38bdf8', 250, () => {
-              applyDamageByDescriptor(pick, 1);
+              applyDamageByDescriptor(pick, 1, { sourceSide: ai });
               if (pick.kind === 'minion') pick.minion.frozen = true;
               else pl.frozen = true;
               resolveDeaths();
@@ -2480,16 +2910,16 @@
           const powerVal = (Game.difficulty === 'dungeon' && Game.dungeonStage === 2) ? 2 : 1;
           ai.armor += powerVal;
           const pool = [
-            { kind: 'player-hero', id: 'player-hero', label: '你的英雄' },
+            { kind: 'player-hero', id: 'player-hero', label: t('your_hero') },
             ...pl.board.filter(m => m.hp > 0).map(m => ({ kind: 'minion', minion: m, id: m.uid, label: `【${m.name}】` }))
           ];
           const pick = pool[Math.floor(Math.random() * pool.length)];
           const fromPos = getEntityCenter('enemy-hero');
           const toPos = getEntityCenter(pick.id);
           SoundFX.spellFire();
-          addLog(`🔥 ${bossName}使用【熔岩龙息】，获得 ${powerVal} 点护甲并对${pick.label}造成 ${powerVal} 点伤害！`, 'enemy', '🔥');
+          addLog(logT('boss_dragon', { boss: bossName, n: powerVal, label: pick.label }), 'enemy', '🔥');
           FXEngine.shootProjectile(fromPos.x, fromPos.y, toPos.x, toPos.y, '#ea580c', 250, () => {
-            applyDamageByDescriptor(pick, powerVal);
+            applyDamageByDescriptor(pick, powerVal, { sourceSide: ai });
             resolveDeaths();
             renderAll();
             if (!checkGameOver()) setTimeout(aiStep, stepDelay);
@@ -2561,6 +2991,10 @@
       hideCardZoom();
       Game.turnNumber = 1;
       Game.cardsPlayedCount = 0;
+      Game.dmgDealtToEnemyHero = 0;
+      Game.dmgTakenToHero = 0;
+      Game.minionsSummoned = 0;
+      Game.minionsDestroyed = 0;
       Game.phase = 'mulligan';
       Game.mulliganChoices = [];
       Game.historyItems = [];
@@ -2592,8 +3026,8 @@
       const modal = document.getElementById('mulligan-modal');
       const container = document.getElementById('mulligan-cards');
       const tag = document.getElementById('mulligan-order-tag');
-      const bossSuffix = Game.difficulty === 'dungeon' ? ` · 地下城第 ${Game.dungeonStage + 1}/3 关【${getEnemyBossName()}】` : '';
-      tag.textContent = (Game.turnOrder === 'second' ? '🪙 后手开局（确认后额外获赠 0 费幸运币）' : '⚡ 先手开局') + bossSuffix;
+      const bossSuffix = Game.difficulty === 'dungeon' ? t('dungeon_suffix', { n: Game.dungeonStage + 1, boss: getEnemyBossName() }) : '';
+      tag.textContent = (Game.turnOrder === 'second' ? t('mulligan_second') : t('mulligan_first')) + bossSuffix;
 
       container.innerHTML = '';
       Game.player.hand.forEach((card, idx) => {
@@ -2655,7 +3089,7 @@
       }
 
       document.getElementById('mulligan-modal').classList.add('hidden');
-      addLog(`🍺 对决打响！你是【${HERO_CLASSES[Game.heroClass].name}】，迎战【${getEnemyBossName()}】！`, 'event', '🍺');
+      addLog(logT('game_start', { hero: HERO_CLASSES[Game.heroClass].name, boss: getEnemyBossName() }), 'event', '🍺');
       startPlayerTurn();
     }
 
@@ -2735,12 +3169,12 @@
           card.addEventListener('click', () => {
             if (Game.builderDraft.length >= 22) {
               SoundFX.errorWarn();
-              showSpeechToast('套牌已满 22 张！可点击右侧卡牌移除后再添加。');
+              showSpeechToast(t('deck_full'));
               return;
             }
             if (owned >= limit) {
               SoundFX.errorWarn();
-              showSpeechToast(limit === 1 ? '传说卡牌每套牌限带 1 张！' : '同名卡牌每套牌最多携带 2 张！');
+              showSpeechToast(limit === 1 ? t('deck_limit_legendary') : t('deck_limit_copy'));
               return;
             }
             SoundFX.cardDraw();
@@ -2759,7 +3193,7 @@
           const qty = counts[tpl.id];
           const row = document.createElement('div');
           row.className = 'flex items-center justify-between px-2 py-1 rounded bg-stone-900 hover:bg-red-950/60 border border-stone-700 cursor-pointer transition';
-          row.title = '点击移除 1 张';
+          row.title = t('tip_deck_remove');
           row.innerHTML = `
             <div class="flex items-center gap-2 truncate">
               <span class="w-5 h-5 rounded-full mana-crystal-orb text-white font-black text-[10px] flex items-center justify-center shrink-0">${tpl.cost}</span>
@@ -2792,12 +3226,12 @@
       const validSet = new Set(Game.pendingAction ? Game.pendingAction.validTargets : []);
 
       // 顶栏状态徽章
-      document.getElementById('turn-badge').textContent = `第 ${Game.turnNumber} 回合`;
+      document.getElementById('turn-badge').textContent = t('turn_badge', { n: Game.turnNumber });
       document.getElementById('difficulty-badge').textContent = Game.difficulty === 'dungeon'
-        ? `🏰 地下城 ${Game.dungeonStage + 1}/3`
-        : Game.difficulty === 'heroic' ? '🐉 英雄黑龙' : '🍺 标准酒馆';
-      document.getElementById('score-badge').textContent = `胜场: ${Game.wins}`;
-      document.getElementById('dungeon-stage-label').textContent = Game.difficulty === 'dungeon' ? `地下城第 ${Game.dungeonStage + 1} 层` : '敌方牌库';
+        ? t('dungeon_badge', { n: Game.dungeonStage + 1 })
+        : Game.difficulty === 'heroic' ? t('difficulty_heroic') : t('difficulty_standard');
+      document.getElementById('score-badge').textContent = `${t('score_wins')}: ${Game.wins}`;
+      document.getElementById('dungeon-stage-label').textContent = Game.difficulty === 'dungeon' ? t('dungeon_stage', { n: Game.dungeonStage + 1 }) : t('enemy_deck');
 
       // 我方职业与法强徽标
       const classPill = document.getElementById('player-class-pill');
@@ -2806,7 +3240,7 @@
 
       const spPill = document.getElementById('spell-power-pill');
       if (sp > 0) {
-        spPill.textContent = `✨ 法伤 +${sp}`;
+        spPill.textContent = t('sp_pill', { n: sp });
         spPill.classList.remove('hidden');
       } else {
         spPill.classList.add('hidden');
@@ -2826,10 +3260,10 @@
       });
 
       const tipEl = document.getElementById('status-tip-text');
-      if (Game.phase === 'enemy') tipEl.textContent = `🐉 ${getEnemyBossName()}正在运筹出牌...`;
-      else if (Game.pendingAction) tipEl.textContent = '🎯 请点击发光边框的有效目标（按 Esc 取消）';
-      else if (Game.selectedHandUid) tipEl.textContent = '✨ 再次点击该卡牌或点击战场中央即可打出';
-      else tipEl.textContent = '💡 悬停卡牌可看大图，点击或拖拽绿光牌与随从行动';
+      if (Game.phase === 'enemy') tipEl.textContent = t('tip_enemy', { boss: getEnemyBossName() });
+      else if (Game.pendingAction) tipEl.textContent = t('tip_target');
+      else if (Game.selectedHandUid) tipEl.textContent = t('tip_selected');
+      else tipEl.textContent = t('tip_default');
 
       // 敌方手牌扇形卡背
       const eBacks = document.getElementById('enemy-hand-backs');
@@ -2850,7 +3284,7 @@
       if (enemyImg.getAttribute('src') !== desiredEnemySrc) enemyImg.setAttribute('src', desiredEnemySrc);
       document.getElementById('enemy-hero-name').textContent = getEnemyBossName();
       document.getElementById('enemy-skill-icon').textContent = e.bossCfg ? e.bossCfg.skillIcon : '🔥';
-      document.getElementById('enemy-hp-skill').title = e.bossCfg ? e.bossCfg.skillTitle : '敌方英雄技能：熔岩龙息（2费：造成1点伤害并获得1点护甲）';
+      document.getElementById('enemy-hp-skill').title = e.bossCfg ? e.bossCfg.skillTitle : t('tip_enemy_hp');
       renderHeroBox(e, 'enemy', validSet.has('enemy-hero'), false);
 
       // 我方英雄肖像与技能更新
@@ -2868,7 +3302,7 @@
       document.getElementById('hero-power-icon').textContent = heroCfg.skillIcon;
       document.getElementById('hero-power-label').textContent = heroCfg.skillName;
       document.getElementById('hero-power-cost').textContent = String(hpCost);
-      hpBtn.title = `${heroCfg.skillDesc}（当前消耗 ${hpCost} 费）`;
+      hpBtn.title = heroCfg.skillDesc + t('tip_hp_cost', { n: hpCost });
       const hpReady = Game.phase === 'player' && p.heroPowerUsesThisTurn < hpMax && p.mana >= hpCost && !(heroCfg.id === 'paladin' && p.board.length >= 7);
       hpBtn.classList.toggle('ready-glow', hpReady);
       hpBtn.classList.toggle('opacity-45', p.heroPowerUsesThisTurn >= hpMax);
@@ -2896,20 +3330,35 @@
 
       // 结束回合按钮状态
       const endBtn = document.getElementById('btn-end-turn');
-      if (Game.phase !== 'player') {
-        endBtn.textContent = '对手回合';
+      if (Game.phase === 'gameover') {
+        endBtn.textContent = t('end_over');
+        endBtn.className = 'absolute right-0 sm:right-1 -translate-y-0.5 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full font-fantasy font-black text-xs sm:text-sm tracking-wider border-2 bg-stone-700 text-stone-400 border-stone-500 cursor-not-allowed opacity-60';
+      } else if (Game.phase !== 'player') {
+        endBtn.textContent = t('end_opponent');
         endBtn.className = 'absolute right-0 sm:right-1 -translate-y-0.5 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full font-fantasy font-black text-xs sm:text-sm tracking-wider border-2 bg-stone-700 text-stone-400 border-stone-500 cursor-not-allowed';
       } else if (!hasAnyPlayableAction()) {
-        endBtn.textContent = '回合结束 ✓';
+        endBtn.textContent = t('end_done');
         endBtn.className = 'absolute right-0 sm:right-1 -translate-y-0.5 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full font-fantasy font-black text-xs sm:text-sm tracking-wider border-2 bg-emerald-500 hover:bg-emerald-400 text-stone-950 border-emerald-100 ready-glow transition active:scale-95';
       } else {
-        endBtn.textContent = '结束回合';
+        endBtn.textContent = t('end_turn');
         endBtn.className = 'absolute right-0 sm:right-1 -translate-y-0.5 px-4 sm:px-5 py-1.5 sm:py-2 rounded-full font-fantasy font-black text-xs sm:text-sm tracking-wider border-2 bg-amber-500 hover:bg-amber-400 text-stone-950 border-amber-200 shadow-xl transition active:scale-95';
       }
 
       renderBoardRow(e.board, document.getElementById('enemy-board-row'), false, validSet);
       renderBoardRow(p.board, document.getElementById('player-board-row'), true, validSet);
       renderPlayerHand(p, sp);
+
+      // 对局结束后：手牌与场面置灰、禁止交互，避免看起来还能操作
+      const isOver = Game.phase === 'gameover';
+      ['player-hand-row', 'player-board-row', 'enemy-board-row'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.toggle('pointer-events-none', isOver);
+          el.classList.toggle('opacity-60', isOver);
+        }
+      });
+      const hpBtn2 = document.getElementById('btn-hero-power');
+      if (hpBtn2) hpBtn2.classList.toggle('opacity-50', isOver);
     }
 
     function renderHeroBox(side, prefix, isValidTarget, isSelected) {
@@ -2920,7 +3369,7 @@
       const frozenEl = document.getElementById(`${prefix}-hero-frozen`);
       const secretsRow = document.getElementById(`${prefix}-secrets-row`);
 
-      hpEl.textContent = String(side.hp);
+      hpEl.textContent = String(Math.max(0, side.hp));
       hpEl.className = `absolute -bottom-1.5 -right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full hp-blood-orb ${side.hp < side.maxHp ? 'text-amber-200' : 'text-white'} font-extrabold text-xs sm:text-sm flex items-center justify-center border-2 border-red-950`;
 
       if (side.armor > 0) {
@@ -2948,7 +3397,7 @@
         const orb = document.createElement('span');
         orb.className = `w-5 h-5 rounded-full ${sec.color} border-2 text-stone-950 font-black text-[11px] flex items-center justify-center shadow-lg cursor-help`;
         orb.textContent = '?';
-        orb.title = side.isPlayer ? `已挂载奥秘：【${sec.name}】` : '敌方奥秘：触发特定条件时揭晓！';
+        orb.title = side.isPlayer ? t('tip_secret_own', { name: sec.name }) : t('tip_secret_enemy');
         secretsRow.appendChild(orb);
       });
 
@@ -2965,7 +3414,7 @@
         const wDur = document.getElementById('player-weapon-dur');
         if (side.weapon) {
           wSlot.className = 'w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-b from-stone-800 to-stone-950 border-2 border-amber-400 relative flex items-center justify-center shadow-lg';
-          wSlot.title = `${side.weapon.name} (${side.weapon.atk}/${side.weapon.durability})${side.weapon.windfury ? ' · 风怒' : ''}`;
+          wSlot.title = `${side.weapon.name} (${side.weapon.atk}/${side.weapon.durability})${side.weapon.windfury ? t('tip_windfury') : ''}`;
           wIcon.textContent = side.weapon.icon;
           wIcon.classList.remove('opacity-35');
           wAtk.textContent = String(side.weapon.atk);
@@ -2974,7 +3423,7 @@
           wDur.classList.replace('hidden', 'flex');
         } else {
           wSlot.className = 'w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-stone-900/90 border-2 border-dashed border-stone-600 relative flex items-center justify-center shadow-inner';
-          wSlot.title = '武器栏：打出武器牌后英雄可亲自发起攻击';
+          wSlot.title = t('tip_weapon_empty');
           wIcon.textContent = '⚔️';
           wIcon.classList.add('opacity-35');
           wAtk.classList.replace('flex', 'hidden');
@@ -2997,7 +3446,7 @@
       if (minions.length === 0) {
         const emptyHint = document.createElement('div');
         emptyHint.className = 'text-[11px] text-amber-950/60 font-bold tracking-wider pointer-events-none';
-        emptyHint.textContent = isFriendly ? '— 我方战线（最多 7 名随从）—' : '— 敌方战线 —';
+        emptyHint.textContent = isFriendly ? t('board_empty_friendly') : t('board_empty_enemy');
         container.appendChild(emptyHint);
         return;
       }
@@ -3030,15 +3479,15 @@
           ${m.frozen ? `<div class="absolute inset-0 frozen-overlay rounded-[inherit] pointer-events-none"></div>` : ''}
           ${m.exhausted && !m.cantAttack ? `<span class="zzz-anim absolute -top-2 right-0 text-[11px] font-black text-sky-200 drop-shadow pointer-events-none">Zzz</span>` : ''}
           ${tpl.rarity === 'legendary' ? `<span class="absolute -top-2.5 left-1/2 -translate-x-1/2 px-1.5 rounded-full bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 text-[9px] font-black text-stone-950 border border-white shadow whitespace-nowrap">🐉传说</span>` : ''}
-          <div class="relative z-10 mt-auto bg-gradient-to-t from-black/90 via-black/75 to-transparent px-1 py-0.5 text-center rounded-b-[inherit]">
-            <div class="text-[9px] sm:text-[10px] font-bold text-amber-100 truncate">${m.name}</div>
+          <div class="relative z-10 mt-auto bg-gradient-to-t from-black/90 via-black/75 to-transparent px-3 pb-1.5 pt-0.5 text-center rounded-b-[inherit]">
+            <div class="text-[8px] sm:text-[9px] leading-tight font-bold text-amber-100">${m.name}</div>
             ${badges.length > 0 ? `<div class="text-[9px] leading-none">${badges.join('')}</div>` : ''}
           </div>
           <div class="z-20 absolute -bottom-1.5 -left-1.5 w-6 h-6 sm:w-7 sm:h-7 rounded-full ${m.atk > m.baseAtk ? 'bg-emerald-400 text-stone-950' : 'atk-sword-orb text-stone-950'} font-extrabold text-xs flex items-center justify-center border-2 border-amber-950">${m.atk}</div>
           <div class="z-20 absolute -bottom-1.5 -right-1.5 w-6 h-6 sm:w-7 sm:h-7 rounded-full hp-blood-orb ${m.hp < m.maxHp ? 'text-amber-200' : m.maxHp > tpl.hp ? 'ring-2 ring-emerald-300 text-white' : 'text-white'} font-extrabold text-xs flex items-center justify-center border-2 border-red-950">${m.hp}</div>
         `;
 
-        el.addEventListener('mouseenter', () => showCardZoom(tpl, null, getSpellPower(Game.player)));
+        el.addEventListener('mouseenter', () => showCardZoom(tpl, null, getSpellPower(Game.player), m.atk, m.hp));
         el.addEventListener('mouseleave', hideCardZoom);
 
         el.addEventListener('click', (ev) => {
@@ -3140,22 +3589,25 @@
     function populateCodexModal() {
       const grid = document.getElementById('codex-card-grid');
       grid.innerHTML = '';
-      Object.values(CARD_DB)
+      const codexList = Object.values(CARD_DB)
         .filter(c => c.collectible || c.id.startsWith('dk_'))
-        .sort((a, b) => a.cost - b.cost)
+        .sort((a, b) => a.cost - b.cost);
+      const codexCountEl = document.getElementById('codex-card-count');
+      if (codexCountEl) codexCountEl.textContent = String(codexList.length);
+      codexList
         .forEach(tpl => {
           const card = document.createElement('div');
           card.className = 'hs-card-frame p-2 rounded-xl border border-amber-700/50 flex flex-col justify-between gap-1';
           card.innerHTML = `
             <div class="flex items-center justify-between">
               <span class="w-5 h-5 rounded-full mana-crystal-orb text-white font-bold text-[10px] flex items-center justify-center">${tpl.cost}</span>
-              <span class="text-[10px] text-amber-300 font-bold">${tpl.id.startsWith('dk_') ? '👑死骑衍生' : tpl.rarity === 'legendary' ? '★传说' : tpl.rarity === 'epic' ? '史诗' : tpl.rarity === 'rare' ? '稀有' : '普通'}</span>
+              <span class="text-[10px] text-amber-300 font-bold">${tpl.id.startsWith('dk_') ? t('rarity_dk') : tpl.rarity === 'legendary' ? t('rarity_legendary_s') : tpl.rarity === 'epic' ? t('rarity_epic_s') : tpl.rarity === 'rare' ? t('rarity_rare_s') : t('rarity_common_s')}</span>
             </div>
             <div class="h-14 rounded-lg overflow-hidden border border-amber-800/60">${tpl.art}</div>
             <div class="hs-ribbon py-0.5 px-1 rounded text-center font-bold text-amber-100 text-xs truncate">${tpl.name}</div>
             <div class="hs-parchment rounded p-1.5 text-[10px] font-semibold text-center leading-snug min-h-[42px] flex items-center justify-center"><div>${formatCardDesc(tpl, 0, true)}</div></div>
             <div class="text-[10px] font-bold text-amber-200/80 flex justify-between pt-0.5">
-              <span>${tpl.secretType ? '奥秘' : tpl.type === 'minion' ? '随从' : tpl.type === 'weapon' ? '武器' : '法术'}</span>
+              <span>${tpl.secretType ? t('type_secret') : tpl.type === 'minion' ? t('type_minion') : tpl.type === 'weapon' ? t('type_weapon') : t('type_spell')}</span>
               <span>${tpl.type === 'minion' ? `⚔️${tpl.atk} ❤️${tpl.hp}` : tpl.type === 'weapon' ? `⚔️${tpl.atk} 🛡️${tpl.durability}` : ''}</span>
             </div>
           `;
@@ -3278,7 +3730,7 @@
         SoundFX.heal();
         const r = ev.currentTarget.getBoundingClientRect();
         FXEngine.spawnBurst(r.left + 14, r.top + 14, '#fde047', 16, 4);
-        showSpeechToast('🍺 干杯！愿炉石指引你的神抽！');
+        showSpeechToast(t('toast_cheers'));
       });
 
       document.getElementById('btn-confirm-mulligan').addEventListener('click', confirmMulligan);
@@ -3286,6 +3738,34 @@
       // 职业/模式/先后手弹窗
       document.getElementById('btn-new-game').addEventListener('click', () => {
         document.getElementById('newgame-modal').classList.remove('hidden');
+      });
+      // 认输：两段式确认（首次点击进入确认态，3 秒内再次点击生效；无进行中对局时不做任何事）
+      let concedeArmed = false;
+      let concedeTimer = null;
+      const concedeBtn = document.getElementById('btn-concede');
+      const concedeLabel = concedeBtn.querySelector('span:last-child');
+      const disarmConcede = () => {
+        concedeArmed = false;
+        if (concedeTimer) { clearTimeout(concedeTimer); concedeTimer = null; }
+        concedeLabel.textContent = t('btn_concede');
+        concedeBtn.classList.remove('bg-red-800', 'border-red-400', 'animate-pulse');
+      };
+      concedeBtn.addEventListener('click', () => {
+        if (Game.phase === 'gameover' || Game.phase === 'mulligan') return;
+        if (Game.phase === 'discover') { showSpeechToast(t('toast_discover_first')); return; }
+        if (!concedeArmed) {
+          concedeArmed = true;
+          concedeLabel.textContent = t('btn_concede_confirm');
+          concedeBtn.classList.add('bg-red-800', 'border-red-400', 'animate-pulse');
+          concedeTimer = setTimeout(disarmConcede, 3000);
+          return;
+        }
+        disarmConcede();
+        clearPendingSelection();
+        hideCardZoom();
+        addLog(logT('concede'), 'bad', '🏳️');
+        Game.player.hp = 0;
+        checkGameOver();
       });
       document.getElementById('btn-close-newgame').addEventListener('click', () => {
         document.getElementById('newgame-modal').classList.add('hidden');
@@ -3339,13 +3819,13 @@
       document.getElementById('btn-save-deck').addEventListener('click', () => {
         if (Game.builderDraft.length !== 22) {
           SoundFX.errorWarn();
-          showSpeechToast(`套牌需要恰好 22 张卡牌（当前 ${Game.builderDraft.length}/22），也可点“智能推荐满编”！`);
+          showSpeechToast(t('deck_need_22', { n: Game.builderDraft.length }));
           return;
         }
         Game.customDecks[Game.heroClass] = [...Game.builderDraft];
         savePersistentData();
         SoundFX.victory();
-        showSpeechToast('✅ 专属套牌已保存，立即开启新对局！');
+        showSpeechToast(t('deck_saved'));
         initNewMatch();
       });
       document.querySelectorAll('.mana-filter-btn').forEach(btn => {
@@ -3369,11 +3849,12 @@
 
       const logDrawer = document.getElementById('battle-log-drawer');
       document.getElementById('btn-log-toggle').addEventListener('click', () => {
-        const isHidden = logDrawer.classList.contains('hidden');
-        if (isHidden) {
-          logDrawer.className = 'fixed right-0 top-11 bottom-0 flex flex-col w-64 bg-stone-950/95 border-l border-amber-600/60 z-[45] shadow-2xl';
-        } else {
+        // 用计算样式判断可见性：抽屉在 xl 屏默认由 xl:flex 显示，classList 含 hidden 也会误判为隐藏
+        const visible = window.getComputedStyle(logDrawer).display !== 'none';
+        if (visible) {
           logDrawer.className = 'hidden';
+        } else {
+          logDrawer.className = 'fixed right-0 top-11 bottom-0 flex flex-col w-64 bg-stone-950/95 border-l border-amber-600/60 z-[45] shadow-2xl';
         }
       });
       document.getElementById('btn-close-log').addEventListener('click', () => {
@@ -3383,6 +3864,10 @@
       document.getElementById('btn-sound-toggle').addEventListener('click', (ev) => {
         const isMuted = SoundFX.toggleMute();
         ev.currentTarget.textContent = isMuted ? '🔇' : '🔊';
+      });
+
+      document.getElementById('btn-lang-toggle').addEventListener('click', () => {
+        setLanguage(currentLang === 'en' ? 'zh' : 'en');
       });
 
       document.getElementById('btn-play-again').addEventListener('click', initNewMatch);
@@ -3401,5 +3886,6 @@
       populateCodexModal();
       bindEvents();
       initNewMatch();
+      setLanguage(currentLang);
       if (window.TutorialGuide) TutorialGuide.init({ skipFocus: true });
     };
